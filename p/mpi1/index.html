@@ -1,0 +1,595 @@
+<!doctype html><html lang=en-us dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="MPI学习笔记（一）"><title>MPI学习笔记——消息传递模型和P2P通信</title><link rel=canonical href=https://kaigezheng.github.io/p/mpi1/><link rel=stylesheet href=/scss/style.min.f0b427a7e322d7ca4439d64cb0fb1eab709bbe5dc0a5bf10c9071e75f49fced4.css><meta property='og:title' content="MPI学习笔记——消息传递模型和P2P通信"><meta property='og:description' content="MPI学习笔记（一）"><meta property='og:url' content='https://kaigezheng.github.io/p/mpi1/'><meta property='og:site_name' content="Kambri's Blog"><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='技术'><meta property='article:tag' content='MPI'><meta property='article:published_time' content='2024-11-27T13:22:00+08:00'><meta property='article:modified_time' content='2024-11-27T13:22:00+08:00'><meta property='og:image' content='https://kaigezheng.github.io/p/mpi1/img/cover.png'><meta name=twitter:title content="MPI学习笔记——消息传递模型和P2P通信"><meta name=twitter:description content="MPI学习笔记（一）"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content='https://kaigezheng.github.io/p/mpi1/img/cover.png'><link rel="shortcut icon" href=/favicon.png></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu_98fe1fefb25c1393.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>🫠</span></figure><div class=site-meta><h1 class=site-name><a href=/>Kambri's Blog</a></h1><h2 class=site-description>你好！这里是Kambri的技术&生活博客，我将在这里分享技术经验和记录生活。</h2></div></header><ol class=menu-social><li><a href=https://github.com/KaigeZheng target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=mailto:kambrikg@gmail.com target=_blank title=邮箱(kambrikg@gmail.com) rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mail"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/><path d="M3 7l9 6 9-6"/></svg></a></li><li><a href=https://kaigezheng.github.io/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页|Home</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档|Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索|Search</span></a></li><li><a href=/links/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>友链|Links</span></a></li><li><a href=/devlog/><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-logs"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 12h.01"/><path d="M4 6h.01"/><path d="M4 18h.01"/><path d="M8 18h2"/><path d="M8 12h2"/><path d="M8 6h2"/><path d="M14 6h6"/><path d="M14 12h6"/><path d="M14 18h6"/></svg>
+<span>日志|Logs</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#mpi基础>MPI基础</a><ol><li><a href=#编译>编译</a></li><li><a href=#运行>运行</a></li><li><a href=#编程>编程</a><ol><li><a href=#引入头文件和初始化>引入头文件和初始化</a></li><li><a href=#函数调用>函数调用</a></li><li><a href=#hello-world>Hello World</a></li></ol></li></ol></li><li><a href=#mpi的发送和接收>MPI的发送和接收</a><ol><li><a href=#mpi-send-and-receive>MPI Send and Receive</a></li><li><a href=#mpi_send和mpi_recv方法定义><code>MPI_Send</code>和<code>MPI_Recv</code>方法定义</a></li><li><a href=#代码>代码</a><ol><li><a href=#简单的p2p通信>简单的P2P通信</a></li><li><a href=#乒乓程序-循环p2p通信>乒乓程序-循环P2P通信</a></li><li><a href=#环通信重要>环通信（重要）</a></li></ol></li></ol></li><li><a href=#动态接收消息>动态接收消息</a><ol><li><a href=#mpi_status结构体><code>MPI_Status</code>结构体</a></li><li><a href=#mpi_status结构体查询的示例><code>MPI_Status</code>结构体查询的示例</a></li><li><a href=#使用mpi_probe找出消息大小>使用<code>MPI_Probe</code>找出消息大小</a></li></ol></li><li><a href=#p2p通信应用随机游走>P2P通信应用——随机游走</a><ol><li><a href=#随机游走>随机游走</a></li><li><a href=#随机游走问题的并行化>随机游走问题的并行化</a></li><li><a href=#使用mpi_send和mpi_recv组织代码>使用<code>MPI_Send</code>和<code>MPI_Recv</code>组织代码</a><ol><li><a href=#分解域>分解域</a></li><li><a href=#定义并初始化walkers>定义并初始化walkers</a></li><li><a href=#walker移动功能>walker移动功能</a></li><li><a href=#发送函数>发送函数</a></li><li><a href=#接收函数>接收函数</a></li><li><a href=#main函数>main函数</a></li><li><a href=#死锁及预防>死锁及预防</a></li><li><a href=#确认完成>确认完成</a></li></ol></li></ol></li></ol></nav></div></section></aside><main class="main full-width"><article class="has-image main-article"><header class=article-header><div class=article-image><a href=/p/mpi1/><img src=/p/mpi1/img/cover_hu_1c53f30a50a4928b.png srcset="/p/mpi1/img/cover_hu_1c53f30a50a4928b.png 800w, /p/mpi1/img/cover_hu_57e452e22ce8c1f2.png 1600w" width=800 height=387 loading=lazy alt="Featured image of post MPI学习笔记——消息传递模型和P2P通信"></a></div><div class=article-details><header class=article-category><a href=/categories/%E6%8A%80%E6%9C%AF/ style=background-color:#df7988;color:#fff>技术
+</a><a href=/categories/mpi/ style=background-color:#6b69d6;color:#fff>MPI</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/mpi1/>MPI学习笔记——消息传递模型和P2P通信</a></h2><h3 class=article-subtitle>MPI学习笔记（一）</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Nov 27, 2024</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 11 分钟</time></div></footer></div></header><section class=article-content><p>本文写于<code>2024-2-23</code>至<code>2024-3-4</code>。</p><h1 id=参考资料>参考资料</h1><p>我学习MPI时主要参考MPI Tutorial，部分参考《An Introduction to Parallel Programming》。MPI Tutorial的内容由浅入深，配套了简单但实用的程序案例，支持中文，非常适合入门；《An Introduction to Parallel Programming》只适合补充，中文的翻译挺一般的。</p><p><a class=link href=https://mpitutorial.com/tutorials/ target=_blank rel=noopener>MPI Tutorial</a></p><p><a class=link href=https://ghproxy.com/github.com/apachecn/huazhang-cs-books/blob/master/%E5%B9%B6%E8%A1%8C%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1%E5%AF%BC%E8%AE%BA.pdf target=_blank rel=noopener>《An Introduction to Parallel Programming》</a></p><h2 id=mpi基础>MPI基础</h2><h3 id=编译>编译</h3><p><code>mpicc -o output input</code>：使用mpich自带的脚本进行编译和链接，mpicc、mpicxx、mpifort分别对应C、C++、Fortran</p><h3 id=运行>运行</h3><ul><li>在本地机器上运行<code>number</code>个进程的程序：<code>mpiexec -n &lt;number> ./output</code></li><li>在多个节点上运行<code>number</code>个进程的程序：<code>mpiexec -f machinefile -n &lt;number> ./output</code></li></ul><blockquote><p><code>mpirun</code>是MPI的实现用来启动任务的一个程序，进程会在host文件里指定的所有机器上面生成，MPI程序就会在所有进程上面运行。<code>-n</code>参数告诉MPI程序要运行<code>&lt;number></code>个进程。</p></blockquote><h3 id=编程>编程</h3><h4 id=引入头文件和初始化>引入头文件和初始化</h4><p>MPI环境必须以<code>MPI_Init(int* argc, char*** argv)</code>来初始化。
+在<code>MPI_Init</code>的过程中，所有MPI的<strong>全局变量</strong>或者<strong>内部变量</strong>都会被创建。举例：一个communicator会根据所有可用的进程被创建出来（进程是通过mpi运行时的参数指定的），每个进程会被分配独一无二的rank。</p><h4 id=函数调用>函数调用</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Comm_size</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span> <span class=n>communicator</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span><span class=o>*</span> <span class=n>size</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li><code>MPI_Comm_size</code>会返回<strong>communicator的可用进程数量</strong>，<code>MPI_COMM_WORLD</code>（这个communicator是MPI帮忙生成的）这个变量包含了当前MPI任务中所有的进程，因此这个调用会返回所有的可用进程数目。</li><li><code>MPI_COMM_WORLD</code>是预定义的、所有进程的默认通信器，当MPI程序启动时，每个进程都会加入这个通信器，可通过<code>MPI_Comm_rank</code>得到每个进程的唯一标识符。</li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Comm_rank</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span> <span class=n>name</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span><span class=o>*</span> <span class=n>name_length</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li><code>MPI_Comm_rank</code>会返回<strong>communicator中当前进程的rank</strong>，communicator中每个进程会以此得到一个从0开始递增的数字作为rank值（主要用来指定发送或接受信息时对应的进程）。</li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Get_processor_name</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=kt>char</span><span class=o>*</span> <span class=n>name</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span><span class=o>*</span> <span class=n>name_Length</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li><code>MPI_Get_processor_name</code>会得到当前进程实际跑的时候所在的处理器名。</li><li><code>MPI_Get_Processor_name(processor_name, &amp;name_len)</code>将处理器名存储在<code>processor_name</code>中，并更新<code>name_len</code>（存储处理器名称的实际长度）。</li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Finalize</span><span class=p>(</span><span class=kt>void</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li><code>MPI_Finalize</code>是用来清理MPI环境的，被调用后就没有MPI函数可以被调用了。</li></ul><h4 id=hello-world>Hello World</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;mpi.h&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>**</span> <span class=n>argv</span><span class=p>){</span>
+</span></span><span class=line><span class=cl>        <span class=nf>MPI_Init</span><span class=p>(</span><span class=nb>NULL</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>world_size</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=nf>MPI_Comm_size</span><span class=p>(</span><span class=n>MPI_COMM_WORLD</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>world_size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>world_rank</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=nf>MPI_Comm_rank</span><span class=p>(</span><span class=n>MPI_COMM_WORLD</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>world_rank</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=kt>char</span> <span class=n>processor_name</span><span class=p>[</span><span class=n>MPI_MAX_PROCESSOR_NAME</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>name_len</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=nf>MPI_Get_processor_name</span><span class=p>(</span><span class=n>processor_name</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>name_len</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nf>printf</span><span class=p>(</span><span class=s>&#34;Hello world from processor %s, rank %d out of %d processors</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=n>processor_name</span><span class=p>,</span> <span class=n>world_rank</span><span class=p>,</span> <span class=n>world_size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nf>MPI_Finalize</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=mpi的发送和接收>MPI的发送和接收</h2><h3 id=mpi-send-and-receive>MPI Send and Receive</h3><ul><li>A进程决定发送一些消息给B进程，将需要发送的数据打包放入缓存，根据特定的rank确定发送的进程</li><li>B需要确认接收A的数据，A会接收到数据传递成功的信息</li><li>有时A需要传递很多不同消息，为了让B更方便地区别不同消息，MPI运行发送者和接受者额外地指定一些信息ID（标签，tags），当B只要求接收某种特定标签地信息时，其他非该标签地信息会先被缓存直到B需要</li></ul><h3 id=mpi_send和mpi_recv方法定义><code>MPI_Send</code>和<code>MPI_Recv</code>方法定义</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Send</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=kt>void</span><span class=o>*</span> <span class=n>data</span><span class=p>,</span> <span class=c1>//数据缓存
+</span></span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>count</span><span class=p>,</span> <span class=c1>//数据数量（发送）
+</span></span></span><span class=line><span class=cl>	<span class=n>MPI_Datatype</span> <span class=n>datatype</span><span class=p>,</span> <span class=c1>//数据类型
+</span></span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>destination</span><span class=p>,</span> <span class=c1>//发送方进程rank
+</span></span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>tag</span><span class=p>,</span> <span class=c1>//信息标签
+</span></span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span> <span class=n>communicator</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Recv</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=kt>void</span><span class=o>*</span> <span class=n>data</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>count</span><span class=p>,</span> <span class=c1>//数据数量（**最多**接收）
+</span></span></span><span class=line><span class=cl>	<span class=n>MPI_Datatype</span> <span class=n>datatype</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>source</span><span class=p>,</span> <span class=c1>//接收方进程rank
+</span></span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>tag</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span> <span class=n>communicator</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Status</span><span class=o>*</span> <span class=n>status</span><span class=p>)</span> <span class=c1>//可以是MPI_STATUS_IGNORE
+</span></span></span></code></pre></td></tr></table></div></div><h3 id=代码>代码</h3><h4 id=简单的p2p通信>简单的P2P通信</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;mpi.h&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kt>int</span> <span class=n>world_rank</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=nf>MPI_Comm_rank</span><span class=p>(</span><span class=n>MPI_COMM_WORLD</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>world_rank</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=kt>int</span> <span class=n>world_size</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=nf>MPI_Comm_size</span><span class=p>(</span><span class=n>MPI_COMM_WORLD</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>world_size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kt>int</span> <span class=n>number</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=p>(</span><span class=n>world_rank</span> <span class=o>==</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>number</span> <span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=nf>MPI_Send</span><span class=p>(</span><span class=o>&amp;</span><span class=n>number</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=n>MPI_INT</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>MPI_COMM_WORLD</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>world_rank</span> <span class=o>==</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nf>MPI_Recv</span><span class=p>(</span><span class=o>&amp;</span><span class=n>number</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=n>MPI_INT</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>MPI_COMM_WORLD</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>             <span class=n>MPI_STATUS_IGNORE</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=c1>//tag=MPI_ANY_TAG
+</span></span></span><span class=line><span class=cl>    <span class=nf>printf</span><span class=p>(</span><span class=s>&#34;Process 1 received number %d from process 0</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>           <span class=n>number</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li>若当前进程是0进程，那么初始化一个数字-1通过<code>MPI_Send</code>以<code>MPI_INT</code>数据类型发送给1进程</li><li>在<code>else if</code>中，进程1会调用<code>MPI_Recv</code>接收这个数字并打印</li><li>每个进程使用了0作为消息标签来指定消息（由于这里只有一种类型地消息被传递，因此进程也可以使用预先定义好的常量<code>MPI_ANY_TAG</code>来作为tag）</li></ul><h4 id=乒乓程序-循环p2p通信>乒乓程序-循环P2P通信</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=kt>int</span> <span class=n>ping_pong_count</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=kt>int</span> <span class=n>partner_rank</span> <span class=o>=</span> <span class=p>(</span><span class=n>world_rank</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span> <span class=o>%</span> <span class=mi>2</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>while</span> <span class=p>(</span><span class=n>ping_pong_count</span> <span class=o>&lt;</span> <span class=n>PING_PONG_LIMIT</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>world_rank</span> <span class=o>==</span> <span class=n>ping_pong_count</span> <span class=o>%</span> <span class=mi>2</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// Increment the ping pong count before you send it
+</span></span></span><span class=line><span class=cl>        <span class=n>ping_pong_count</span><span class=o>++</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=nf>MPI_Send</span><span class=p>(</span><span class=o>&amp;</span><span class=n>ping_pong_count</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=n>MPI_INT</span><span class=p>,</span> <span class=n>partner_rank</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>MPI_COMM_WORLD</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nf>printf</span><span class=p>(</span><span class=s>&#34;%d sent and incremented ping_pong_count %d to %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>               <span class=n>world_rank</span><span class=p>,</span> <span class=n>ping_pong_count</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>               <span class=n>partner_rank</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nf>MPI_Recv</span><span class=p>(</span><span class=o>&amp;</span><span class=n>ping_pong_count</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=n>MPI_INT</span><span class=p>,</span> <span class=n>partner_rank</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                 <span class=n>MPI_COMM_WORLD</span><span class=p>,</span> <span class=n>MPI_STATUS_IGNORE</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nf>printf</span><span class=p>(</span><span class=s>&#34;%d received ping_pong_count %d from %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>               <span class=n>world_rank</span><span class=p>,</span> <span class=n>ping_pong_count</span><span class=p>,</span> <span class=n>partner_rank</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li>在两个进程中，<code>ping_pong_count</code>在每次发送消息后递增，随着<code>ping_pong_count</code>的递增，两个进程会轮流成为发送者和接收者直到limit被触发</li></ul><h4 id=环通信重要>环通信（重要）</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=kt>int</span> <span class=n>token</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=p>(</span><span class=n>world_rank</span> <span class=o>!=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nf>MPI_Recv</span><span class=p>(</span><span class=o>&amp;</span><span class=n>token</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=n>MPI_INT</span><span class=p>,</span> <span class=n>world_rank</span> <span class=o>-</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>             <span class=n>MPI_COMM_WORLD</span><span class=p>,</span> <span class=n>MPI_STATUS_IGNORE</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=nf>printf</span><span class=p>(</span><span class=s>&#34;Process %d received token %d from process %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>           <span class=n>world_rank</span><span class=p>,</span> <span class=n>token</span><span class=p>,</span> <span class=n>world_rank</span> <span class=o>-</span> <span class=mi>1</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// Set the token&#39;s value if you are process 0
+</span></span></span><span class=line><span class=cl>    <span class=n>token</span> <span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=nf>MPI_Send</span><span class=p>(</span><span class=o>&amp;</span><span class=n>token</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=n>MPI_INT</span><span class=p>,</span> <span class=p>(</span><span class=n>world_rank</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span> <span class=o>%</span> <span class=n>world_size</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>         <span class=mi>0</span><span class=p>,</span> <span class=n>MPI_COMM_WORLD</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// Now process 0 can receive from the last process.
+</span></span></span><span class=line><span class=cl><span class=k>if</span> <span class=p>(</span><span class=n>world_rank</span> <span class=o>==</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nf>MPI_Recv</span><span class=p>(</span><span class=o>&amp;</span><span class=n>token</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=n>MPI_INT</span><span class=p>,</span> <span class=n>world_size</span> <span class=o>-</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>             <span class=n>MPI_COMM_WORLD</span><span class=p>,</span> <span class=n>MPI_STATUS_IGNORE</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=nf>printf</span><span class=p>(</span><span class=s>&#34;Process %d received token %d from process %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>           <span class=n>world_rank</span><span class=p>,</span> <span class=n>token</span><span class=p>,</span> <span class=n>world_size</span> <span class=o>-</span> <span class=mi>1</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li>在进程0上初始化了<code>token = -1</code>，然后这个值会一次传递给每个进程，程序会在最后一个进程接收到值后结束</li><li>对于进程0：保证了<strong>在想要接收数据之前发送了token</strong></li><li>其他进程：仅仅调用<code>MPI_Recv</code>并调用<code>MPI_Send</code></li><li><code>MPI_Send</code>和<code>MPI_Recv</code>会阻塞直到数据传递完成，避免了死锁</li></ul><blockquote><p><img src=/p/mpi1/img/1.png width=717 height=579 srcset="/p/mpi1/img/1_hu_10e0f35550ec6f18.png 480w, /p/mpi1/img/1_hu_bdcc9012f3f78113.png 1024w" loading=lazy alt=基础MPI数据结构 class=gallery-image data-flex-grow=123 data-flex-basis=297px></p></blockquote><h2 id=动态接收消息>动态接收消息</h2><h3 id=mpi_status结构体><code>MPI_Status</code>结构体</h3><p><code>MPI_Recv</code>将<code>MPI_Status</code>结构体地地址作为参数（可以使用<code>MPI_STATUS_IGNORE</code>忽略）。如果将<code>MPI_Status</code>结构体传递给<code>MPI_Recv</code>函数，则操作完成后将在该结构体中填充有关接收操作地其他信息，包括：</p><ul><li>发送端rank：存储在结构体的<code>MPI_SOURCE</code>元素中，如声明一个<code>MPI_Status stat</code>变量，则可以通过<code>stat.MPI_SOURCE</code>访问rank</li><li>消息的tag：通过<code>MPI_TAG</code>元素访问</li><li>消息的长度：没有预定义的元素，必须使用<code>MPI_Get_count</code>找出消息的长度</li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Get_count</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Sratus</span><span class=o>*</span> <span class=n>status</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Datatype</span> <span class=n>datatype</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span><span class=o>*</span> <span class=n>count</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>WHY？<code>MPI_Recv</code>可以将<code>MPI_ANY_SOURCE</code>用作发送端的rank，将<code>MPI_ANY_TAG</code>用作消息的tag。此时，<code>MPI_Status</code>就是找出消息的实际发送端和tag的唯一方法。此外，并不能保证<code>MPI_Recv</code>能够接收函数调用参数的全部元素；相反，它只接收已发送给它的元素数量（如发送的元素多于所需的接收数量则返回错误），而<code>MPI_Get_count</code>函数用于确定实际的接收量。</p><h3 id=mpi_status结构体查询的示例><code>MPI_Status</code>结构体查询的示例</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=k>const</span> <span class=kt>int</span> <span class=n>MAX_NUMBERS</span> <span class=o>=</span> <span class=mi>100</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=kt>int</span> <span class=n>numbers</span><span class=p>[</span><span class=n>MAX_NUMBERS</span><span class=p>];</span>
+</span></span><span class=line><span class=cl><span class=kt>int</span> <span class=n>number_amount</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=p>(</span><span class=n>world_rank</span> <span class=o>==</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// Pick a random amount of integers to send to process one
+</span></span></span><span class=line><span class=cl>    <span class=nf>srand</span><span class=p>(</span><span class=nf>time</span><span class=p>(</span><span class=nb>NULL</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>    <span class=n>number_amount</span> <span class=o>=</span> <span class=p>(</span><span class=nf>rand</span><span class=p>()</span> <span class=o>/</span> <span class=p>(</span><span class=kt>float</span><span class=p>)</span><span class=n>RAND_MAX</span><span class=p>)</span> <span class=o>*</span> <span class=n>MAX_NUMBERS</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// Send the amount of integers to process one
+</span></span></span><span class=line><span class=cl>    <span class=nf>MPI_Send</span><span class=p>(</span><span class=n>numbers</span><span class=p>,</span> <span class=n>number_amount</span><span class=p>,</span> <span class=n>MPI_INT</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>MPI_COMM_WORLD</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=nf>printf</span><span class=p>(</span><span class=s>&#34;0 sent %d numbers to 1</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>number_amount</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>world_rank</span> <span class=o>==</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>MPI_Status</span> <span class=n>status</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// Receive at most MAX_NUMBERS from process zero
+</span></span></span><span class=line><span class=cl>    <span class=nf>MPI_Recv</span><span class=p>(</span><span class=n>numbers</span><span class=p>,</span> <span class=n>MAX_NUMBERS</span><span class=p>,</span> <span class=n>MPI_INT</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>MPI_COMM_WORLD</span><span class=p>,</span><span class=o>&amp;</span><span class=n>status</span><span class=p>);</span><span class=c1>//！
+</span></span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// After receiving the message, check the status to determine
+</span></span></span><span class=line><span class=cl>    <span class=c1>// how many numbers were actually received
+</span></span></span><span class=line><span class=cl>    <span class=nf>MPI_Get_count</span><span class=p>(</span><span class=o>&amp;</span><span class=n>status</span><span class=p>,</span> <span class=n>MPI_INT</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>number_amount</span><span class=p>);</span><span class=c1>//！
+</span></span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// Print off the amount of numbers, and also print additional
+</span></span></span><span class=line><span class=cl>    <span class=c1>// information in the status object
+</span></span></span><span class=line><span class=cl>    <span class=nf>printf</span><span class=p>(</span><span class=s>&#34;1 received %d numbers from 0. Message source = %d, &#34;</span>
+</span></span><span class=line><span class=cl>           <span class=s>&#34;tag = %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>           <span class=n>number_amount</span><span class=p>,</span> <span class=n>status</span><span class=p>.</span><span class=n>MPI_SOURCE</span><span class=p>,</span> <span class=n>status</span><span class=p>.</span><span class=n>MPI_TAG</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>注：<code>srand(time(NULL))</code>用于生成随机数种子，<code>(rand()/(float)RAND_MAX)</code>用于随机生成0~1的数（需包含<code>&lt;time.h></code>头文件</p><h3 id=使用mpi_probe找出消息大小>使用<code>MPI_Probe</code>找出消息大小</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Probe</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>source</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>tag</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span> <span class=n>comm</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Status</span><span class=o>*</span> <span class=n>status</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>可以将<code>MPI_Probe</code>视为<code>MPI_Recv</code>（除了不接收消息外执行相同的功能）。与<code>MPI_Recv</code>类似，<code>MPI_Probe</code>将阻塞具有匹配标签和发送端的消息，当消息可用时将填充status结构体，然后用户可以使用<code>MPI_Recv</code>接收实际的消息。
+在上面的示例中调用<code>MPI_Probe</code>：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=k>else</span> <span class=nf>if</span> <span class=p>(</span><span class=n>world_rank</span> <span class=o>==</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>MPI_Status</span> <span class=n>status</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// Probe for an incoming message from process zero
+</span></span></span><span class=line><span class=cl>    <span class=nf>MPI_Probe</span><span class=p>(</span><span class=mi>0</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>MPI_COMM_WORLD</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>status</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// When probe returns, the status object has the size and other
+</span></span></span><span class=line><span class=cl>    <span class=c1>// attributes of the incoming message. Get the message size
+</span></span></span><span class=line><span class=cl>    <span class=nf>MPI_Get_count</span><span class=p>(</span><span class=o>&amp;</span><span class=n>status</span><span class=p>,</span> <span class=n>MPI_INT</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>number_amount</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// Allocate a buffer to hold the incoming numbers
+</span></span></span><span class=line><span class=cl>    <span class=kt>int</span><span class=o>*</span> <span class=n>number_buf</span> <span class=o>=</span> <span class=p>(</span><span class=kt>int</span><span class=o>*</span><span class=p>)</span><span class=nf>malloc</span><span class=p>(</span><span class=k>sizeof</span><span class=p>(</span><span class=kt>int</span><span class=p>)</span> <span class=o>*</span> <span class=n>number_amount</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// Now receive the message with the allocated buffer
+</span></span></span><span class=line><span class=cl>    <span class=nf>MPI_Recv</span><span class=p>(</span><span class=n>number_buf</span><span class=p>,</span> <span class=n>number_amount</span><span class=p>,</span> <span class=n>MPI_INT</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>             <span class=n>MPI_COMM_WORLD</span><span class=p>,</span> <span class=n>MPI_STATUS_IGNORE</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=nf>printf</span><span class=p>(</span><span class=s>&#34;1 dynamically received %d numbers from 0.</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>           <span class=n>number_amount</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=nf>free</span><span class=p>(</span><span class=n>number_buf</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li>通过<code>MPI_Probe</code>阻塞消息并填充status，再调用<code>MPI_Get_count</code>得到消息个数，然后进程1分配适当大小的缓冲区并接收数字</li></ul><h2 id=p2p通信应用随机游走>P2P通信应用——随机游走</h2><h3 id=随机游走>随机游走</h3><p>给定<em>Min</em>，<em>Max</em>和随机游走器<em>W</em>，让游走器<em>W</em>向右以任意长度的<em>S</em>随机移动。如果该过程越过边界，它就会绕回。<em>W</em>一次只能左右移动一个单位。</p><p><img src=/p/mpi1/img/2.png width=238 height=44 srcset="/p/mpi1/img/2_hu_12f37bdd54c5197c.png 480w, /p/mpi1/img/2_hu_3918bb4fa7eab452.png 1024w" loading=lazy alt=随机游走问题 class=gallery-image data-flex-grow=540 data-flex-basis=1298px></p><h3 id=随机游走问题的并行化>随机游走问题的并行化</h3><p>在许多并行程序的应用中，首要任务是在各个进程之间划分域。随机游走问题的一维域大小为$Max-Min+1$（因为游走器包含<em>Max</em>和<em>Min</em>）。假设游走器只能采取整数大小的步长，我们可以轻松地将域在每个进程中划分为大小近乎相等的块。例如，如果<em>Min</em>为0，<em>Max</em>为20，并且我们有四个进程，则将像这样拆分域。</p><p><img src=/p/mpi1/img/3.png width=238 height=88 srcset="/p/mpi1/img/3_hu_a5cd379f53da42a6.png 480w, /p/mpi1/img/3_hu_f67dd9325075ef08.png 1024w" loading=lazy alt=任务分配 class=gallery-image data-flex-grow=270 data-flex-basis=649px></p><p>前三个进程拥有域的五个单元，而最后一个进程则拥有最后五个单元并且再加上一个剩余的单元。一旦队域进行了分区，应用程序将初始化游走器，游走器将以步长<em>S</em>进行总步数随机的游走。
+例如，如果游走器在进程0上进行了移动总数为6的游走，执行如下：</p><ul><li>游走器的步行长度开始增加。但是值达到4时，已达到进程0的边界，因此进程0必须域进程1交流游走器信息。</li><li>进程1接收游走器并继续移动直到达到移动总数6，然后进行新的随机移动</li></ul><p><img src=/p/mpi1/img/4.png width=238 height=123 srcset="/p/mpi1/img/4_hu_9465f29c832bdf1e.png 480w, /p/mpi1/img/4_hu_250cf31d9dc0c9d5.png 1024w" loading=lazy alt=交流游走器信息 class=gallery-image data-flex-grow=193 data-flex-basis=464px></p><h3 id=使用mpi_send和mpi_recv组织代码>使用<code>MPI_Send</code>和<code>MPI_Recv</code>组织代码</h3><p>初步特征和功能：</p><ul><li>明确每个进程在域中的部分</li><li>每个进程初始化N个walker，所有这些walker都从其局部域的第一个值开始</li><li>每个walker都有两个相关的整数值：<strong>当前位置</strong>和<strong>剩余步数</strong></li><li>walkers开始遍历该域，并传递到其他进程直到完成所有移动</li><li>当所有walker完成时，该进程终止</li></ul><blockquote><p><code>MPI_Abort(MPI_COMM_WORLD, 错误代码)</code>可以终止指定通讯器中的所有进程并退出MPI环境，将错误代码返回给操作系统</p></blockquote><h4 id=分解域>分解域</h4><p>该函数将考虑域的总大小，并为MPI进程找到合适的子域并将域的其余部分交给最终的进程：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=kt>void</span> <span class=nf>decompose_domain</span><span class=p>(</span><span class=kt>int</span> <span class=n>domain_size</span><span class=p>,</span> <span class=kt>int</span> <span class=n>world_rank</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                      <span class=kt>int</span> <span class=n>world_size</span><span class=p>,</span> <span class=kt>int</span><span class=o>*</span> <span class=n>subdomain_start</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                      <span class=kt>int</span><span class=o>*</span> <span class=n>subdomain_size</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>world_size</span> <span class=o>&gt;</span> <span class=n>domain_size</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 通常总进程数小于域的规模
+</span></span></span><span class=line><span class=cl>        <span class=nf>MPI_Abort</span><span class=p>(</span><span class=n>MPI_COMM_WORLD</span><span class=p>,</span> <span class=mi>1</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=o>*</span><span class=n>subdomain_start</span> <span class=o>=</span> <span class=n>domain_size</span> <span class=o>/</span> <span class=n>world_size</span> <span class=o>*</span> <span class=n>world_rank</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=o>*</span><span class=n>subdomain_size</span> <span class=o>=</span> <span class=n>domain_size</span> <span class=o>/</span> <span class=n>world_size</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>world_rank</span> <span class=o>==</span> <span class=n>world_size</span> <span class=o>-</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 最后一个进程特殊处理domain_size
+</span></span></span><span class=line><span class=cl>        <span class=o>*</span><span class=n>subdomain_size</span> <span class=o>+=</span> <span class=n>domain_size</span> <span class=o>%</span> <span class=n>world_size</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>  <span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>该函数将域分成偶数个块，并考虑了存在余数的情况。该函数返回一个子域开始和一个子域大小。</p><h4 id=定义并初始化walkers>定义并初始化walkers</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=k>typedef</span> <span class=k>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>location</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>num_steps_left_in_walker</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span> <span class=n>Walker</span><span class=p>;</span>
+</span></span></code></pre></td></tr></table></div></div><p>初始化函数如下：（用于填充传入的walker列表）</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=kt>void</span> <span class=nf>initialize_walkers</span><span class=p>(</span><span class=kt>int</span> <span class=n>num_walkers_per_proc</span><span class=p>,</span> <span class=kt>int</span> <span class=n>max_walk_size</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                        <span class=kt>int</span> <span class=n>subdomain_start</span><span class=p>,</span> <span class=kt>int</span> <span class=n>subdomain_size</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                        <span class=n>vector</span><span class=o>&lt;</span><span class=n>Walker</span><span class=o>&gt;*</span> <span class=n>incoming_walkers</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>Walker</span> <span class=n>walker</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>num_walkers_per_proc</span><span class=p>;</span> <span class=n>i</span><span class=o>++</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// Initialize walkers in the middle of the subdomain
+</span></span></span><span class=line><span class=cl>        <span class=n>walker</span><span class=p>.</span><span class=n>location</span> <span class=o>=</span> <span class=n>subdomain_start</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>walker</span><span class=p>.</span><span class=n>num_steps_left_in_walk</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>            <span class=p>(</span><span class=nf>rand</span><span class=p>()</span> <span class=o>/</span> <span class=p>(</span><span class=kt>float</span><span class=p>)</span><span class=n>RAND_MAX</span><span class=p>)</span> <span class=o>*</span> <span class=n>max_walk_size</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>incoming_walkers</span><span class=o>-&gt;</span><span class=nf>push_back</span><span class=p>(</span><span class=n>walker</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=walker移动功能>walker移动功能</h4><p>此功能负责使walkers前进，直到完成移动为止；如果超出局部域范围，则将其添加到<code>outgoing_wallers(vector)</code>中：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=kt>void</span> <span class=nf>walk</span><span class=p>(</span><span class=n>Walker</span><span class=o>*</span> <span class=n>walker</span><span class=p>,</span> <span class=kt>int</span> <span class=n>subdomain_start</span><span class=p>,</span> <span class=kt>int</span> <span class=n>subdomain_size</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>          <span class=kt>int</span> <span class=n>domain_size</span><span class=p>,</span> <span class=n>vector</span><span class=o>&lt;</span><span class=n>Walker</span><span class=o>&gt;*</span> <span class=n>outgoing_walkers</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>while</span> <span class=p>(</span><span class=n>walker</span><span class=o>-&gt;</span><span class=n>num_steps_left_in_walk</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>walker</span><span class=o>-&gt;</span><span class=n>location</span> <span class=o>==</span> <span class=n>subdomain_start</span> <span class=o>+</span> <span class=n>subdomain_size</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=c1>// 抵达边界
+</span></span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>walker</span><span class=o>-&gt;</span><span class=n>location</span> <span class=o>==</span> <span class=n>domain_size</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=n>walker</span><span class=o>-&gt;</span><span class=n>location</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>            <span class=n>outgoing_walkers</span><span class=o>-&gt;</span><span class=nf>push_back</span><span class=p>(</span><span class=o>*</span><span class=n>walker</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>            <span class=k>break</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>walker</span><span class=o>-&gt;</span><span class=n>num_steps_left_in_walk</span><span class=o>--</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=n>walker</span><span class=o>-&gt;</span><span class=n>location</span><span class=o>++</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=c1>// 向前移动一步（剩余步数--；当前位置++）直到走完
+</span></span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=发送函数>发送函数</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=kt>void</span> <span class=nf>send_outgoing_walkers</span><span class=p>(</span><span class=n>vector</span><span class=o>&lt;</span><span class=n>Walker</span><span class=o>&gt;*</span> <span class=n>outgoing_walkers</span><span class=p>,</span> 
+</span></span><span class=line><span class=cl>                           <span class=kt>int</span> <span class=n>world_rank</span><span class=p>,</span> <span class=kt>int</span> <span class=n>world_size</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// 向下一个进程发送消息（如果是最后一个进程则向0进程发送）
+</span></span></span><span class=line><span class=cl>    <span class=nf>MPI_Send</span><span class=p>((</span><span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=n>outgoing_walkers</span><span class=o>-&gt;</span><span class=nf>data</span><span class=p>(),</span> 
+</span></span><span class=line><span class=cl>             <span class=n>outgoing_walkers</span><span class=o>-&gt;</span><span class=nf>size</span><span class=p>()</span> <span class=o>*</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>Walker</span><span class=p>),</span> <span class=n>MPI_BYTE</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>             <span class=p>(</span><span class=n>world_rank</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span> <span class=o>%</span> <span class=n>world_size</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>MPI_COMM_WORLD</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// 清除待传出walker列表
+</span></span></span><span class=line><span class=cl>    <span class=n>outgoing_walkers</span><span class=o>-&gt;</span><span class=nf>clear</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=接收函数>接收函数</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=kt>void</span> <span class=nf>receive_incoming_walkers</span><span class=p>(</span><span class=n>vector</span><span class=o>&lt;</span><span class=n>Walker</span><span class=o>&gt;*</span> <span class=n>incoming_walkers</span><span class=p>,</span><span class=kt>int</span> <span class=n>world_rank</span><span class=p>,</span> <span class=kt>int</span> <span class=n>world_size</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>MPI_Status</span> <span class=n>status</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// Receive from the process before you. If you are process zero,
+</span></span></span><span class=line><span class=cl>    <span class=c1>// receive from the last process
+</span></span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=n>incoming_rank</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=p>(</span><span class=n>world_rank</span> <span class=o>==</span> <span class=mi>0</span><span class=p>)</span> <span class=o>?</span> <span class=n>world_size</span> <span class=o>-</span> <span class=mi>1</span> <span class=o>:</span> <span class=n>world_rank</span> <span class=o>-</span> <span class=mi>1</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=nf>MPI_Probe</span><span class=p>(</span><span class=n>incoming_rank</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>MPI_COMM_WORLD</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>status</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// Resize your incoming walker buffer based on how much data is
+</span></span></span><span class=line><span class=cl>    <span class=c1>// being received
+</span></span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=n>incoming_walkers_size</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=nf>MPI_Get_count</span><span class=p>(</span><span class=o>&amp;</span><span class=n>status</span><span class=p>,</span> <span class=n>MPI_BYTE</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>incoming_walkers_size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=n>incoming_walkers</span><span class=o>-&gt;</span><span class=nf>resize</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=n>incoming_walkers_size</span> <span class=o>/</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>Walker</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>    <span class=nf>MPI_Recv</span><span class=p>((</span><span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=n>incoming_walkers</span><span class=o>-&gt;</span><span class=nf>data</span><span class=p>(),</span> <span class=n>incoming_walkers_size</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>             <span class=n>MPI_BYTE</span><span class=p>,</span> <span class=n>incoming_rank</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>MPI_COMM_WORLD</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>             <span class=n>MPI_STATUS_IGNORE</span><span class=p>);</span> 
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>由于事先不知道将接收多少walkers，因此需要调用<code>MPI_Probe</code>。</p><h4 id=main函数>main函数</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=c1>// Find your part of the domain
+</span></span></span><span class=line><span class=cl><span class=nf>decompose_domain</span><span class=p>(</span><span class=n>domain_size</span><span class=p>,</span> <span class=n>world_rank</span><span class=p>,</span> <span class=n>world_size</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                 <span class=o>&amp;</span><span class=n>subdomain_start</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>subdomain_size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// Initialize walkers in your subdomain
+</span></span></span><span class=line><span class=cl><span class=nf>initialize_walkers</span><span class=p>(</span><span class=n>num_walkers_per_proc</span><span class=p>,</span> <span class=n>max_walk_size</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                   <span class=n>subdomain_start</span><span class=p>,</span> <span class=n>subdomain_size</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                   <span class=o>&amp;</span><span class=n>incoming_walkers</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>while</span> <span class=p>(</span><span class=o>!</span><span class=n>all_walkers_finished</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// Determine walker completion later
+</span></span></span><span class=line><span class=cl>    <span class=c1>// Process all incoming walkers
+</span></span></span><span class=line><span class=cl>    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>incoming_walkers</span><span class=p>.</span><span class=nf>size</span><span class=p>();</span> <span class=n>i</span><span class=o>++</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nf>walk</span><span class=p>(</span><span class=o>&amp;</span><span class=n>incoming_walkers</span><span class=p>[</span><span class=n>i</span><span class=p>],</span> <span class=n>subdomain_start</span><span class=p>,</span> <span class=n>subdomain_size</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>             <span class=n>domain_size</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>outgoing_walkers</span><span class=p>);</span> 
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// Send all outgoing walkers to the next process.
+</span></span></span><span class=line><span class=cl>    <span class=nf>send_outgoing_walkers</span><span class=p>(</span><span class=o>&amp;</span><span class=n>outgoing_walkers</span><span class=p>,</span> <span class=n>world_rank</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                          <span class=n>world_size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// Receive all the new incoming walkers
+</span></span></span><span class=line><span class=cl>    <span class=nf>receive_incoming_walkers</span><span class=p>(</span><span class=o>&amp;</span><span class=n>incoming_walkers</span><span class=p>,</span> <span class=n>world_rank</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                             <span class=n>world_size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=死锁及预防>死锁及预防</h4><p><strong>死锁</strong>是指两个或多个进程各自在等待另一个进程释放资源，或者两个或多个进程在循环链中等待资源的特定条件。
+MPI规范表面<code>MPI_Send</code>会一直阻塞，直到可以回收发送缓冲区为止。者意味着当网络可以缓冲消息时，<code>MPI_Send</code>将返回。如果发送最终无法被网络缓冲，它们将一直阻塞直到发布匹配的接收。
+避免可能发生的发送和接收死锁的最佳方法是对消息进行排序，以使发送将具有匹配的接收。一种简单的方法是更改循环，使偶数编号的进程在接收walkers之前发送传出的walkers，而奇数编号的进程相反。</p><p><img src=/p/mpi1/img/5.png width=308 height=148 srcset="/p/mpi1/img/5_hu_f42ac853c7849a4c.png 480w, /p/mpi1/img/5_hu_5052f213bfdf2beb.png 1024w" loading=lazy alt=可能会发生死锁的通信 class=gallery-image data-flex-grow=208 data-flex-basis=499px>
+<img src=/p/mpi1/img/6.png width=260 height=218 srcset="/p/mpi1/img/6_hu_3ede7da2c7237ee8.png 480w, /p/mpi1/img/6_hu_df25280e37b1a7dd.png 1024w" loading=lazy alt=更改循环 class=gallery-image data-flex-grow=119 data-flex-basis=286px></p><h4 id=确认完成>确认完成</h4><p>最后一步——确定每个walker何时结束。由于walkers可以随机行走，因此它们可以在任何一个进程中结束。因此，如果没有某种额外的通信，所有进程都很难知道walkers何时全部结束。一种可能的解决方案是让进程-跟踪所有已完成的walker，然后告诉其他所有进程何时终止。但是每个进程都必须向进程0报告所有瓦纳城的walker，然后还要处理不同类型的传入信息。
+由于我们直到任意一个walker可以行进的最大距离和每对发送和接收对它可以行进的最小总大小（子域大小），因此可以计算出终止之前每个进程应该执行的发送和接收量。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=c1>// Find your part of the domain
+</span></span></span><span class=line><span class=cl><span class=nf>decompose_domain</span><span class=p>(</span><span class=n>domain_size</span><span class=p>,</span> <span class=n>world_rank</span><span class=p>,</span> <span class=n>world_size</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                 <span class=o>&amp;</span><span class=n>subdomain_start</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>subdomain_size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// Initialize walkers in your subdomain
+</span></span></span><span class=line><span class=cl><span class=nf>initialize_walkers</span><span class=p>(</span><span class=n>num_walkers_per_proc</span><span class=p>,</span> <span class=n>max_walk_size</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                  <span class=n>subdomain_start</span><span class=p>,</span> <span class=n>subdomain_size</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                  <span class=o>&amp;</span><span class=n>incoming_walkers</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// Determine the maximum amount of sends and receives needed to 
+</span></span></span><span class=line><span class=cl><span class=c1>// complete all walkers
+</span></span></span><span class=line><span class=cl><span class=kt>int</span> <span class=n>maximum_sends_recvs</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>    <span class=n>max_walk_size</span> <span class=o>/</span> <span class=p>(</span><span class=n>domain_size</span> <span class=o>/</span> <span class=n>world_size</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>m</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>m</span> <span class=o>&lt;</span> <span class=n>maximum_sends_recvs</span><span class=p>;</span> <span class=n>m</span><span class=o>++</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// Process all incoming walkers
+</span></span></span><span class=line><span class=cl>    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>incoming_walkers</span><span class=p>.</span><span class=nf>size</span><span class=p>();</span> <span class=n>i</span><span class=o>++</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nf>walk</span><span class=p>(</span><span class=o>&amp;</span><span class=n>incoming_walkers</span><span class=p>[</span><span class=n>i</span><span class=p>],</span> <span class=n>subdomain_start</span><span class=p>,</span> <span class=n>subdomain_size</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>             <span class=n>domain_size</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>outgoing_walkers</span><span class=p>);</span> 
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// Send and receive if you are even and vice versa for odd
+</span></span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>world_rank</span> <span class=o>%</span> <span class=mi>2</span> <span class=o>==</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nf>send_outgoing_walkers</span><span class=p>(</span><span class=o>&amp;</span><span class=n>outgoing_walkers</span><span class=p>,</span> <span class=n>world_rank</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                              <span class=n>world_size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nf>receive_incoming_walkers</span><span class=p>(</span><span class=o>&amp;</span><span class=n>incoming_walkers</span><span class=p>,</span> <span class=n>world_rank</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                                 <span class=n>world_size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nf>receive_incoming_walkers</span><span class=p>(</span><span class=o>&amp;</span><span class=n>incoming_walkers</span><span class=p>,</span> <span class=n>world_rank</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                                 <span class=n>world_size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nf>send_outgoing_walkers</span><span class=p>(</span><span class=o>&amp;</span><span class=n>outgoing_walkers</span><span class=p>,</span> <span class=n>world_rank</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                              <span class=n>world_size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div></section><footer class=article-footer><section class=article-tags><a href=/tags/%E6%8A%80%E6%9C%AF/>技术</a>
+<a href=/tags/mpi/>MPI</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section></footer><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css integrity=sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV crossorigin=anonymous><script src=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js integrity=sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8 crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js integrity=sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05 crossorigin=anonymous defer></script><script>window.addEventListener("DOMContentLoaded",()=>{const e=document.querySelector(".main-article");renderMathInElement(e,{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1},{left:"\\(",right:"\\)",display:!1},{left:"\\[",right:"\\]",display:!0}],ignoredClasses:["gist"]})})</script></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article class=has-image><a href=/p/mpi2/><div class=article-image><img src=/p/mpi2/img/cover.1b10af5dd0740892e815db251f9b6014_hu_8ff3d7a986a08a81.png width=250 height=150 loading=lazy alt="Featured image of post MPI学习笔记——集合通信" data-key=mpi2 data-hash="md5-GxCvXdB0CJLoFdslH5tgFA=="></div><div class=article-details><h2 class=article-title>MPI学习笔记——集合通信</h2></div></a></article></div></div></aside><script src=https://utteranc.es/client.js repo=KaigeZheng/KaigeZheng.github.io issue-term=pathname crossorigin=anonymous async></script><style>.utterances{max-width:unset}</style><script>let utterancesLoaded=!1;function setUtterancesTheme(e){let t=document.querySelector(".utterances iframe");t&&t.contentWindow.postMessage({type:"set-theme",theme:`github-${e}`},"https://utteranc.es")}addEventListener("message",e=>{if(e.origin!=="https://utteranc.es")return;utterancesLoaded=!0,setUtterancesTheme(document.documentElement.dataset.scheme)}),window.addEventListener("onColorSchemeChange",e=>{if(!utterancesLoaded)return;setUtterancesTheme(e.detail)})</script><footer class=site-footer><section class=copyright>&copy;
+2024 -
+2025 Kambri's Blog</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

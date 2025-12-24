@@ -1,0 +1,264 @@
+<!doctype html><html lang=en-us dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="MPI学习笔记（二）"><title>MPI学习笔记——集合通信</title><link rel=canonical href=https://kaigezheng.github.io/p/mpi2/><link rel=stylesheet href=/scss/style.min.f0b427a7e322d7ca4439d64cb0fb1eab709bbe5dc0a5bf10c9071e75f49fced4.css><meta property='og:title' content="MPI学习笔记——集合通信"><meta property='og:description' content="MPI学习笔记（二）"><meta property='og:url' content='https://kaigezheng.github.io/p/mpi2/'><meta property='og:site_name' content="Kambri's Blog"><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='技术'><meta property='article:tag' content='MPI'><meta property='article:published_time' content='2024-11-27T17:34:00+08:00'><meta property='article:modified_time' content='2024-11-27T17:34:00+08:00'><meta property='og:image' content='https://kaigezheng.github.io/p/mpi2/img/cover.png'><meta name=twitter:title content="MPI学习笔记——集合通信"><meta name=twitter:description content="MPI学习笔记（二）"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content='https://kaigezheng.github.io/p/mpi2/img/cover.png'><link rel="shortcut icon" href=/favicon.png></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu_98fe1fefb25c1393.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>🫠</span></figure><div class=site-meta><h1 class=site-name><a href=/>Kambri's Blog</a></h1><h2 class=site-description>你好！这里是Kambri的技术&生活博客，我将在这里分享技术经验和记录生活。</h2></div></header><ol class=menu-social><li><a href=https://github.com/KaigeZheng target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=mailto:kambrikg@gmail.com target=_blank title=邮箱(kambrikg@gmail.com) rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mail"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/><path d="M3 7l9 6 9-6"/></svg></a></li><li><a href=https://kaigezheng.github.io/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页|Home</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档|Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索|Search</span></a></li><li><a href=/links/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>友链|Links</span></a></li><li><a href=/devlog/><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-logs"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 12h.01"/><path d="M4 6h.01"/><path d="M4 18h.01"/><path d="M8 18h2"/><path d="M8 12h2"/><path d="M8 6h2"/><path d="M14 6h6"/><path d="M14 12h6"/><path d="M14 18h6"/></svg>
+<span>日志|Logs</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#mpi广播及collective-communication>MPI广播及collective communication</a><ol><li><a href=#集合通信及其同步点>集合通信及其同步点</a></li><li><a href=#使用mpi_bcast进行广播>使用<code>MPI_Bcast</code>进行广播</a></li><li><a href=#使用mpi_send和mpi_recv广播>使用<code>MPI_Send</code>和<code>MPI_Recv</code>广播</a></li><li><a href=#时间比较>时间比较</a></li></ol></li><li><a href=#mpi-scattergatherand-allgather>MPI Scatter,Gather,and Allgather</a><ol><li><a href=#mpi_scatter><code>MPI_Scatter</code></a></li><li><a href=#mpi_gather><code>MPI_Gather</code></a></li><li><a href=#使用mpi_scatter和mpi_gather来计算平均数>使用<code>MPI_Scatter</code>和<code>MPI_Gather</code>来计算平均数</a><ol><li><a href=#生成随机浮点数>生成随机浮点数</a></li><li><a href=#完整代码>完整代码</a></li></ol></li><li><a href=#mpi_allgather><code>MPI_Allgather</code></a></li></ol></li><li><a href=#mpi_reduce-and-mpi_allreduce><code>MPI_Reduce</code> and <code>MPI_Allreduce</code></a><ol><li><a href=#mpi_reduce><code>MPI_Reduce</code></a><ol><li><a href=#mpi_reduce计算均值><code>MPI_Reduce</code>计算均值</a></li></ol></li><li><a href=#mpi_allreduce><code>MPI_Allreduce</code></a><ol><li><a href=#mpi_allreduce计算标准差><code>MPI_Allreduce</code>计算标准差</a></li></ol></li></ol></li><li><a href=#通信子和mpi组>通信子和MPI组</a><ol><li><a href=#通讯子>通讯子</a><ol><li><a href=#概述>概述</a></li><li><a href=#使用多个通信子的示例>使用多个通信子的示例</a></li><li><a href=#其他通信子创建函数>其他通信子创建函数</a></li></ol></li></ol></li><li><a href=#组>组</a><ol><li><a href=#概述-1>概述</a></li><li><a href=#使用mpi组>使用MPI组</a></li></ol></li></ol></nav></div></section></aside><main class="main full-width"><article class="has-image main-article"><header class=article-header><div class=article-image><a href=/p/mpi2/><img src=/p/mpi2/img/cover_hu_1c53f30a50a4928b.png srcset="/p/mpi2/img/cover_hu_1c53f30a50a4928b.png 800w, /p/mpi2/img/cover_hu_57e452e22ce8c1f2.png 1600w" width=800 height=387 loading=lazy alt="Featured image of post MPI学习笔记——集合通信"></a></div><div class=article-details><header class=article-category><a href=/categories/%E6%8A%80%E6%9C%AF/ style=background-color:#df7988;color:#fff>技术
+</a><a href=/categories/mpi/ style=background-color:#6b69d6;color:#fff>MPI</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/mpi2/>MPI学习笔记——集合通信</a></h2><h3 class=article-subtitle>MPI学习笔记（二）</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Nov 27, 2024</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 8 分钟</time></div></footer></div></header><section class=article-content><p>本文写于<code>2024-3-19</code>至<code>2024-3-24</code>。</p><h2 id=mpi广播及collective-communication>MPI广播及collective communication</h2><h3 id=集合通信及其同步点>集合通信及其同步点</h3><p><code>MPI_Barrier(MPI_Comm communicator)</code>用于同步进程，所有进程在执行代码时必须首先都到达一个同步点才能继续执行后面的代码。</p><p><img src=/p/mpi2/img/1.png width=329 height=333 srcset="/p/mpi2/img/1_hu_78dc8735eefeccf7.png 480w, /p/mpi2/img/1_hu_87c4430d715d9d5b.png 1024w" loading=lazy alt=显式阻塞操作 class=gallery-image data-flex-grow=98 data-flex-basis=237px></p><h3 id=使用mpi_bcast进行广播>使用<code>MPI_Bcast</code>进行广播</h3><p>一个广播发生时，一个进程会把同样一份数据传递给一个communicator里的所有其他进程。广播的主要用途之一是把用户输入传递给一个分布式程序，或把一些<strong>配置参数</strong>传递给所有进程。</p><p><img src=/p/mpi2/img/2.png width=322 height=122 srcset="/p/mpi2/img/2_hu_5d39583c51e2af62.png 480w, /p/mpi2/img/2_hu_bde7340efcda98df.png 1024w" loading=lazy alt=根进程将消息广播到各个进程 class=gallery-image data-flex-grow=263 data-flex-basis=633px></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Bcast</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=kt>void</span><span class=o>*</span> <span class=n>data</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>count</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Datatype</span> <span class=n>datatype</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>root</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span> <span class=n>communicator</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>当根进程调用<code>MPI_Bcast</code>函数时，<code>data</code>变量会被发送到其他进程，其他进程调用<code>MPI_Bcast</code>时，<code>data</code>变量会被复制成从根进程接受到的数据。</p><h3 id=使用mpi_send和mpi_recv广播>使用<code>MPI_Send</code>和<code>MPI_Recv</code>广播</h3><p>类似的这层封装：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=kt>void</span> <span class=nf>bcast</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>data</span><span class=p>,</span> <span class=kt>int</span> <span class=n>count</span><span class=p>,</span> <span class=n>MPI_Datatype</span> <span class=n>datatype</span><span class=p>,</span> <span class=kt>int</span> <span class=n>root</span><span class=p>,</span> <span class=n>MPI_Comm</span> <span class=n>communicator</span><span class=p>){</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>world_rank</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>	<span class=nf>MPI_Comm_rank</span><span class=p>(</span><span class=n>communicator</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>world_rank</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>world_size</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>	<span class=nf>MPI_Comm_size</span><span class=p>(</span><span class=n>communicator</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>world_size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>if</span><span class=p>(</span><span class=n>world_rank</span> <span class=o>==</span> <span class=n>root</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>i</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>	<span class=k>for</span><span class=p>(</span><span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>world_size</span><span class=p>;</span> <span class=n>i</span><span class=o>++</span><span class=p>){</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span><span class=p>(</span><span class=n>i</span> <span class=o>!=</span> <span class=n>world_rank</span><span class=p>){</span>
+</span></span><span class=line><span class=cl>			<span class=nf>MPI_Send</span><span class=p>(</span><span class=n>data</span><span class=p>,</span> <span class=n>count</span><span class=p>,</span> <span class=n>datatype</span><span class=p>,</span> <span class=n>i</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>communicator</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span><span class=k>else</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nf>MPI_Recv</span><span class=p>(</span><span class=n>data</span><span class=p>,</span> <span class=n>count</span><span class=p>,</span> <span class=n>datatype</span><span class=p>,</span> <span class=n>root</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>communicator</span><span class=p>,</span> <span class=n>MPI_STATUS_IGNORE</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>但是效率特别低！因为每个进程都只有一个I/O网络连接，只使用进程0的一个输出连接来传递数据->优化为树的通信算法：</p><p><img src=/p/mpi2/img/3.png width=294 height=155 srcset="/p/mpi2/img/3_hu_28587088a0b909e8.png 480w, /p/mpi2/img/3_hu_77828b92925186.png 1024w" loading=lazy alt=树状广播通信算法 class=gallery-image data-flex-grow=189 data-flex-basis=455px></p><p>而<code>MPI_Bcast</code>的实现使用了一个类似的树形广播算法来获得比较好的网络利用率。</p><h3 id=时间比较>时间比较</h3><p><code>MPI_Wtime</code>不接收参数，仅仅返回以浮点数形式展示的从1970-01-01到现在为止进过的秒数，与C的<code>time</code>函数类似，使用结构如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=k>for</span><span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>num_trails</span><span class=p>;</span> <span class=n>i</span><span class=o>++</span><span class=p>){</span>
+</span></span><span class=line><span class=cl>	<span class=nf>MPI_Barrier</span><span class=p>(</span><span class=n>MPI_COMM_WORLD</span><span class=p>);</span><span class=c1>//在开始之前同步
+</span></span></span><span class=line><span class=cl>	<span class=n>total_trial_A_time</span> <span class=o>-=</span> <span class=nf>MPI_Wtime</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>	<span class=cm>/* trial_A */</span>
+</span></span><span class=line><span class=cl>	<span class=nf>MPI_Barrier</span><span class=p>(</span><span class=n>MPI_COMM_WORLD</span><span class=p>);</span><span class=c1>//在获得最终时间前再次同步
+</span></span></span><span class=line><span class=cl>	<span class=n>total_trial_A_time</span> <span class=o>+=</span> <span class=nf>MPI_Wtime</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nf>MPI_Barrier</span><span class=p>(</span><span class=n>MPI_COMM_WORLD</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>	<span class=n>total_trial_B_time</span> <span class=o>-=</span> <span class=nf>MPI_Wtime</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>	<span class=cm>/* trial_B */</span>
+</span></span><span class=line><span class=cl>	<span class=nf>MPI_Barrier</span><span class=p>(</span><span class=n>MPI_COMM_WORLD</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>	<span class=n>total_trial_B_time</span> <span class=o>+=</span> <span class=nf>MPI_Wtime</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>当然需要接收实验次数，并在最终时间上除以这个数，同时做多个进程的比较（Processors=2时二者相同）。</p><h2 id=mpi-scattergatherand-allgather>MPI Scatter,Gather,and Allgather</h2><h3 id=mpi_scatter><code>MPI_Scatter</code></h3><p><code>MPI_Bcast</code>给每个进程发送的是同样的数据，然而<code>MPI_Scatter</code>给每个进程发送的是一个数组的一部分数据。</p><p><img src=/p/mpi2/img/4.png width=287 height=340 srcset="/p/mpi2/img/4_hu_d03e5aa595e6b048.png 480w, /p/mpi2/img/4_hu_c360313f68b830fc.png 1024w" loading=lazy alt=Bcast和Scatter的区别 class=gallery-image data-flex-grow=84 data-flex-basis=202px></p><p><code>MPI_Scatter</code>接收一个数组，并把元素按进程的rank分发。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=n>MPI_Scatter</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=kt>void</span><span class=o>*</span> <span class=n>send_data</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>send_count</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Datatype</span> <span class=n>send_datatype</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>void</span><span class=o>*</span> <span class=n>recv_count</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>recv_count</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Datatype</span> <span class=n>recv_datatype</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>root</span><span class=p>,</span><span class=c1>//规定了根进程
+</span></span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span> <span class=n>communicator</span><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li><code>send_data</code>实在跟进程上的一个数据数组，<code>send_count</code>和<code>send_datatype</code>描述了发送给每个进程的<strong>数据数量</strong>和<strong>数据类型</strong></li><li><code>recv_data</code>参数是一个缓存，里面存了<code>recv_count</code>个<code>recv_datatype</code>数据类型的元素</li><li><code>root</code>和<code>communicator</code>指定开始分发数组的跟进程以及对应的communicator</li></ul><h3 id=mpi_gather><code>MPI_Gather</code></h3><p><code>MPI_Gather</code>与<code>MPI_Scatter</code>相反，从多进程里面收集数据到一个进程，这个机制对很多平行算法很有用，如并行的排序和搜索。</p><p><img src=/p/mpi2/img/5.png width=280 height=154 srcset="/p/mpi2/img/5_hu_b65add7801f2ecc2.png 480w, /p/mpi2/img/5_hu_1cdd81349d4d773b.png 1024w" loading=lazy alt=Gather class=gallery-image data-flex-grow=181 data-flex-basis=436px></p><p>元素根据接收到的进程的rank排序。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=n>MPI_Gather</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=kt>void</span><span class=o>*</span> <span class=n>send_data</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>send_count</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Datatype</span> <span class=n>send_datatype</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>void</span><span class=o>*</span> <span class=n>recv_data</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>recv_count</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Datatype</span> <span class=n>recv_datatype</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>root</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span> <span class=n>communicator</span><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>在<code>MPI_Gather</code>中，只有跟进程需要一个有效的接收缓存，其他所有的调用进程可以传递<code>NULL</code>给<code>recv_data</code>，需要注意<code>recv_count</code>参数是从<strong>每个进程接收到的数据量</strong>。</p><h3 id=使用mpi_scatter和mpi_gather来计算平均数>使用<code>MPI_Scatter</code>和<code>MPI_Gather</code>来计算平均数</h3><ul><li>在根进程上生成一个充满随机数字的数组</li><li>把所有数字用<code>MPI_Scatter</code>分发同样多给每个进程</li><li>每个进程计算它们各自的搭配的数字的平均数</li><li>根进程收集所有平均数并计算平均数</li></ul><h4 id=生成随机浮点数>生成随机浮点数</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=kt>float</span> <span class=o>*</span><span class=nf>create_rand_nums</span><span class=p>(</span><span class=kt>int</span> <span class=n>num_elements</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kt>float</span> <span class=o>*</span><span class=n>rand_nums</span> <span class=o>=</span> <span class=p>(</span><span class=kt>float</span> <span class=o>*</span><span class=p>)</span><span class=nf>malloc</span><span class=p>(</span><span class=k>sizeof</span><span class=p>(</span><span class=kt>float</span><span class=p>)</span> <span class=o>*</span> <span class=n>num_elements</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=nf>assert</span><span class=p>(</span><span class=n>rand_nums</span> <span class=o>!=</span> <span class=nb>NULL</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=n>i</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=k>for</span><span class=p>(</span><span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>num_elements</span><span class=p>;</span> <span class=o>++</span><span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>rand_nums</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>=</span> <span class=p>(</span><span class=nf>rand</span><span class=p>()</span> <span class=o>/</span> <span class=p>(</span><span class=kt>float</span><span class=p>)</span><span class=n>RAND_MAX</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>rand_nums</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=完整代码>完整代码</h4><p><img src=/p/mpi2/img/7.png width=822 height=596 srcset="/p/mpi2/img/7_hu_2373d9d216fda5d8.png 480w, /p/mpi2/img/7_hu_df61f935b35603f2.png 1024w" loading=lazy class=gallery-image data-flex-grow=137 data-flex-basis=331px>
+<img src=/p/mpi2/img/8.png width=964 height=706 srcset="/p/mpi2/img/8_hu_d7bc8c97d918e123.png 480w, /p/mpi2/img/8_hu_b2071cf4392b61d8.png 1024w" loading=lazy class=gallery-image data-flex-grow=136 data-flex-basis=327px>
+<img src=/p/mpi2/img/9.png width=1145 height=777 srcset="/p/mpi2/img/9_hu_d59b9cdb7d654b2d.png 480w, /p/mpi2/img/9_hu_fb8a7c6e48d4a809.png 1024w" loading=lazy class=gallery-image data-flex-grow=147 data-flex-basis=353px></p><h3 id=mpi_allgather><code>MPI_Allgather</code></h3><p>到目前为止都是操作多对一或一对多通信模式的MPI方法，即要么多个进程向一个进程发送数据，要么从一个进程接收数据。很多时候发送多个元素到多个进程也很有用（多对多通信）-><code>MPI_Allgather</code>
+对于分发在所有进程上的一组数据来说，<code>MPI_Allgather</code>会收集所有数据到所有进程上。从最基础的角度来看，<code>MPI_Allgather</code>相当于一个<code>MPI_Gather</code>操作之后跟着一个<code>MPI_Bcast</code>操作。</p><p><img src=/p/mpi2/img/10.png width=1145 height=777 srcset="/p/mpi2/img/10_hu_d59b9cdb7d654b2d.png 480w, /p/mpi2/img/10_hu_fb8a7c6e48d4a809.png 1024w" loading=lazy alt=Allgather class=gallery-image data-flex-grow=147 data-flex-basis=353px></p><p>与<code>MPI_Gather</code>类似，每个进程上的元素是根据rank顺序被收集的。<code>MPI_Allgather</code>的方法定义跟<code>MPI_Gather</code>几乎一样，不过不需要root参数来指定根进程。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Allgather</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=kt>void</span><span class=o>*</span> <span class=n>send_data</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>send_count</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Datatype</span> <span class=n>send_datatype</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>void</span><span class=o>*</span> <span class=n>recv_data</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>recv_count</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Datatype</span> <span class=n>recv_datatype</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span> <span class=n>communicator</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=mpi_reduce-and-mpi_allreduce><code>MPI_Reduce</code> and <code>MPI_Allreduce</code></h2><p><em>归约</em>是函数式编程中的经典概念。数据归约包括通过函数将一组数字归约为较小的一组数字。<code>MPI_Reduce</code>将处理在并行程序中需要执行的几乎所有常见的归约操作。</p><h3 id=mpi_reduce><code>MPI_Reduce</code></h3><p>与<code>MPI_Gather</code>类似，<code>MPI_Reduce</code>在每个进程上获取一个输入元素数组，并将输出元素数组返回给根进程。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Reduce</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=kt>void</span><span class=o>*</span> <span class=n>send_data</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>void</span><span class=o>*</span> <span class=n>recv_data</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>count</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Datatype</span> <span class=n>datatype</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Op</span> <span class=n>op</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>root</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span> <span class=n>communicator</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p><code>send_data</code>参数是每个进程都希望归约的<code>datatype</code>类型元素的数组，<code>recv_data</code>仅与具有<code>root</code>rank的进程有关。<code>recv_data</code>数组包含归约的结果，大小为<code>sizeof(datatype) * count</code>。<code>op</code>参数是希望应用于数据的操作。</p><ul><li><code>MPI_MAX</code>返回最大元素</li><li><code>MPI_MIN</code>返回最小元素</li><li><code>MPI_SUM</code>元素求和</li><li><code>MPI_PROD</code>元素相乘</li><li><code>MPI_LAND</code>与</li><li><code>MPI_LOR</code>或</li><li><code>MPI_BAND</code>按位与</li><li><code>MPI_BOR</code>按位或</li><li><code>MPI_MAXLOC</code>返回最大值和所在进程的rank</li><li><code>MPI_MINLOC</code>返回最小值和所在进程的rank</li></ul><p>下面是<code>MPI_Reduce</code>通信模式的说明：</p><p><img src=/p/mpi2/img/11.png width=505 height=222 srcset="/p/mpi2/img/11_hu_dc7eca16bec0cd8b.png 480w, /p/mpi2/img/11_hu_4b9520468b6ac6b6.png 1024w" loading=lazy alt=求和归约1 class=gallery-image data-flex-grow=227 data-flex-basis=545px>
+<img src=/p/mpi2/img/12.png width=505 height=222 srcset="/p/mpi2/img/12_hu_13cb54da29044a11.png 480w, /p/mpi2/img/12_hu_df8bd014be8301a5.png 1024w" loading=lazy alt=求和归约2 class=gallery-image data-flex-grow=227 data-flex-basis=545px></p><h4 id=mpi_reduce计算均值><code>MPI_Reduce</code>计算均值</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=kt>float</span> <span class=n>local_sum</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=kt>int</span> <span class=n>i</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>for</span><span class=p>(</span><span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>num_elements_per_proc</span><span class=p>;</span> <span class=o>++</span><span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=n>local_sum</span> <span class=o>+=</span> <span class=n>rand_nums</span><span class=p>[</span><span class=n>i</span><span class=p>];</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kt>float</span> <span class=n>global_sum</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=nf>MPI_Reduce</span><span class=p>(</span><span class=o>&amp;</span><span class=n>local_sum</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>global_sum</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=n>MPI_FLOAT</span><span class=p>,</span> <span class=n>MPI_SUM</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>MPI_COMM_WORLD</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=mpi_allreduce><code>MPI_Allreduce</code></h3><p>在许多并行程序中，需要在所有进程而不是仅仅在根进程中访问归约的结果。与<code>MPI_Gather</code>相似的补充方式，<code>MPI_Allreduce</code>将归约值并将结果分配给所有进程。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Allreduce</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=kt>void</span><span class=o>*</span> <span class=n>send_data</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>void</span><span class=o>*</span> <span class=n>recv_data</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>count</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Datatype</span> <span class=n>datatype</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Op</span> <span class=n>op</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span> <span class=n>communicator</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p><img src=/p/mpi2/img/13.png width=505 height=222 srcset="/p/mpi2/img/13_hu_9d6ab8c4403bd8ad.png 480w, /p/mpi2/img/13_hu_403a470765c48728.png 1024w" loading=lazy alt=全局求和归约 class=gallery-image data-flex-grow=227 data-flex-basis=545px></p><p><code>MPI_Allreduce</code>等效于执行<code>MPI_Reduce</code>+<code>MPI_Bcast</code>。</p><h4 id=mpi_allreduce计算标准差><code>MPI_Allreduce</code>计算标准差</h4><p>标准差：数字与均值之间的离散程度的度量。
+要计算标准差，必须先计算所有数字的平均值。总和均值的平方根是最终结果。
+思路：将整体功能分为“计算avg”和“计算$(x_i-avg)^2$的sum"，其中第二个功能需要第一个功能的值。</p><h2 id=通信子和mpi组>通信子和MPI组</h2><h3 id=通讯子>通讯子</h3><h4 id=概述>概述</h4><p>对于简单的应用程序，使用<code>MPI_COMM_WORLD</code>进行所有操作并不罕见，但是对于更复杂的用例，拥有更多的通讯器可能会有所帮助。如，想对网格中进程的子集执行计算。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Comm_split</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span> <span class=n>comm</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>color</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=kt>int</span> <span class=n>key</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span><span class=o>*</span> <span class=n>newcomm</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p><code>MPI_Comm_split</code>通过输入参数<code>color</code>和<code>key</code>将通讯器拆分为一组子通讯器来创建新的通讯器。原始的通讯器并没有消失，但是在每个进程中都会创建一个新的通讯器。<code>color</code>确定每个进程将属于哪个新的通讯器，为<code>color</code>传递相同值的所有进程都分配给同一通讯器。如果<code>color</code>为<code>MPI_UNDEFINED</code>，泽该进程将不包含在任何新的通讯器中。<code>key</code>确定每个新通讯器中的顺序（rank）。<code>key</code>最小值的进程为0，下一个为1，以此类推。如果存在相等，则在原始通讯器中rank较低的进程是第一位。<code>newcomm</code>是MPI如何将新的通讯器返回给用户。</p><h4 id=使用多个通信子的示例>使用多个通信子的示例</h4><p><img src=/p/mpi2/img/14.png width=720 height=405 srcset="/p/mpi2/img/14_hu_e1702ec5d8c9d5ba.png 480w, /p/mpi2/img/14_hu_b8b5653f1f77929a.png 1024w" loading=lazy alt=将一个MPI_COMM_WORLD按行划分为4个通信子 class=gallery-image data-flex-grow=177 data-flex-basis=426px>
+<img src=/p/mpi2/img/15.png width=775 height=652 srcset="/p/mpi2/img/15_hu_7ed32e68ecfbc66b.png 480w, /p/mpi2/img/15_hu_96480d9e645d29ff.png 1024w" loading=lazy alt=代码实现 class=gallery-image data-flex-grow=118 data-flex-basis=285px></p><p><code>color = world_rank / 4</code>将通讯器矩阵分为了四层
+我们使用原始rank作为拆分操作的<code>key</code>，新通讯器中的所有进程与原始通讯器中的所有进程处于相同的顺序，保证了正确的排序。
+最后通过<code>MPI_Comm_free</code>释放通讯器。MPI一次可以创建的对象数量有限，如果MPI用完了可分配对象，则不释放对象可能会导致运行时错误。</p><h4 id=其他通信子创建函数>其他通信子创建函数</h4><p><code>MPI_Comm_dup</code>是最基本的通讯器创建函数，创建一个通讯器的副本。对于使用库执行特殊函数的应用（例如数学库）非常有用。在这类应用中，重要的是用户代码和库代码不要互相干扰。为了避免这种情况，每个应用程序应该做的第一件事是创建<code>MPI_COMM_WORLD</code>副本，浙江避免其他使用<code>MPI_COMM_WORLD</code>的库的问题。
+另一个功能是<code>MPI_Comm_create</code>。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Comm_create</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span> <span class=n>comm</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Group</span> <span class=n>group</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span><span class=o>*</span> <span class=n>newcom</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>与<code>MPI_Comm_create_group</code>的区别：缺少<code>tag</code>参数；<code>MPI_Comm_create_group</code>仅是<code>group</code>中包含的一组进程的集合，而<code>MPI_Comm_create</code>是<code>comm</code>中每个进程的集合。如果尝试在运行很多很多个进程时创建<code>MPI_COMM_WORLD</code>的子集，则重要的是使用尽可能少的进程来执行此操作，因为大型集的开销会变得非常昂贵。</p><h2 id=组>组</h2><h3 id=概述-1>概述</h3><p>创建通讯器有更灵活的方法，使用一种新的MPI对象<code>MPI_Group</code>。</p><blockquote><p>通讯器的实际含义
+在内部，MPI必须保持通讯器的两个主要部分，即区分一个通讯器与另一个通讯器的上下文以及该通讯器包含的一组进程。
+The context is what prevents an operation on one communicator from matching with a similar operation on another communicator.</p></blockquote><p>上下文阻止了与一个通讯器上的操作匹配的另一通讯器上的类似操作。MPI在内部为每个通讯器保留一个ID以防混淆。</p><p><img src=/p/mpi2/img/16.png width=982 height=832 srcset="/p/mpi2/img/16_hu_22289b8a1a2061c9.png 480w, /p/mpi2/img/16_hu_d01f0a77bd3e611e.png 1024w" loading=lazy alt="MPI Tutorial的补充" class=gallery-image data-flex-grow=118 data-flex-basis=283px></p><h3 id=使用mpi组>使用MPI组</h3><p>在MPI中，很容易通过API调用<code>MPI_Comm_group</code>来获取通讯器中的进程组。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Comm_group</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Comm</span> <span class=n>comm</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Group</span><span class=o>*</span> <span class=n>group</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>通讯器包含一个上下文或ID，以及一个组。调用<code>MPI_Comm_group</code>会得到对该组对象的引用。组对象的工作方式与通讯器对象相同，不同之处在于您不能使用它与其他rank进行通信（因为它没有附加上下文）。但仍然可以获取组的rank和size（<code>MPI_Group_rank</code>和<code>MPI_Group_size</code>）。但是，组特有的功能而通讯器无法完成的工作是可以使用组在本地构建新的组。 在此记住本地操作和远程操作之间的区别很重要。 远程操作涉及与其他秩的通信，而本地操作则没有。 创建新的通讯器是一项远程操作，因为所有进程都需要决定相同的上下文和组，而在本地创建组是因为它不用于通信，因此每个进程不需要具有相同的上下文。 您可以随意操作一个组，而无需执行任何通信。</p><blockquote><p>并</p></blockquote><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Group_union</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Group</span> <span class=n>group1</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Group</span> <span class=n>group2</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Group</span><span class=o>*</span> <span class=n>newgroup</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><blockquote><p>交</p></blockquote><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=nf>MPI_Group_intersection</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Group</span> <span class=n>group1</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Group</span> <span class=n>group2</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=n>MPI_Group</span><span class=o>*</span> <span class=n>newgroup</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div></section><footer class=article-footer><section class=article-tags><a href=/tags/%E6%8A%80%E6%9C%AF/>技术</a>
+<a href=/tags/mpi/>MPI</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section></footer><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css integrity=sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV crossorigin=anonymous><script src=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js integrity=sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8 crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js integrity=sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05 crossorigin=anonymous defer></script><script>window.addEventListener("DOMContentLoaded",()=>{const e=document.querySelector(".main-article");renderMathInElement(e,{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1},{left:"\\(",right:"\\)",display:!1},{left:"\\[",right:"\\]",display:!0}],ignoredClasses:["gist"]})})</script></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article class=has-image><a href=/p/mpi1/><div class=article-image><img src=/p/mpi1/img/cover.1b10af5dd0740892e815db251f9b6014_hu_8ff3d7a986a08a81.png width=250 height=150 loading=lazy alt="Featured image of post MPI学习笔记——消息传递模型和P2P通信" data-key=mpi1 data-hash="md5-GxCvXdB0CJLoFdslH5tgFA=="></div><div class=article-details><h2 class=article-title>MPI学习笔记——消息传递模型和P2P通信</h2></div></a></article></div></div></aside><script src=https://utteranc.es/client.js repo=KaigeZheng/KaigeZheng.github.io issue-term=pathname crossorigin=anonymous async></script><style>.utterances{max-width:unset}</style><script>let utterancesLoaded=!1;function setUtterancesTheme(e){let t=document.querySelector(".utterances iframe");t&&t.contentWindow.postMessage({type:"set-theme",theme:`github-${e}`},"https://utteranc.es")}addEventListener("message",e=>{if(e.origin!=="https://utteranc.es")return;utterancesLoaded=!0,setUtterancesTheme(document.documentElement.dataset.scheme)}),window.addEventListener("onColorSchemeChange",e=>{if(!utterancesLoaded)return;setUtterancesTheme(e.detail)})</script><footer class=site-footer><section class=copyright>&copy;
+2024 -
+2025 Kambri's Blog</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

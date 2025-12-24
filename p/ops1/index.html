@@ -1,0 +1,235 @@
+<!doctype html><html lang=en-us dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="运维笔记（一）"><title>高性能集群运维——装机</title><link rel=canonical href=https://kaigezheng.github.io/p/ops1/><link rel=stylesheet href=/scss/style.min.f0b427a7e322d7ca4439d64cb0fb1eab709bbe5dc0a5bf10c9071e75f49fced4.css><meta property='og:title' content="高性能集群运维——装机"><meta property='og:description' content="运维笔记（一）"><meta property='og:url' content='https://kaigezheng.github.io/p/ops1/'><meta property='og:site_name' content="Kambri's Blog"><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='文档'><meta property='article:tag' content='运维'><meta property='article:published_time' content='2025-04-23T20:23:31+08:00'><meta property='article:modified_time' content='2025-04-23T20:23:31+08:00'><meta property='og:image' content='https://kaigezheng.github.io/p/ops1/img/cover.png'><meta name=twitter:title content="高性能集群运维——装机"><meta name=twitter:description content="运维笔记（一）"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content='https://kaigezheng.github.io/p/ops1/img/cover.png'><link rel="shortcut icon" href=/favicon.png></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu_98fe1fefb25c1393.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>🫠</span></figure><div class=site-meta><h1 class=site-name><a href=/>Kambri's Blog</a></h1><h2 class=site-description>你好！这里是Kambri的技术&生活博客，我将在这里分享技术经验和记录生活。</h2></div></header><ol class=menu-social><li><a href=https://github.com/KaigeZheng target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=mailto:kambrikg@gmail.com target=_blank title=邮箱(kambrikg@gmail.com) rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mail"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/><path d="M3 7l9 6 9-6"/></svg></a></li><li><a href=https://kaigezheng.github.io/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页|Home</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档|Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索|Search</span></a></li><li><a href=/links/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>友链|Links</span></a></li><li><a href=/devlog/><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-logs"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 12h.01"/><path d="M4 6h.01"/><path d="M4 18h.01"/><path d="M8 18h2"/><path d="M8 12h2"/><path d="M8 6h2"/><path d="M14 6h6"/><path d="M14 12h6"/><path d="M14 18h6"/></svg>
+<span>日志|Logs</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#硬件>硬件</a><ol><li><a href=#组装>组装</a></li><li><a href=#制作启动盘>制作启动盘</a></li></ol></li><li><a href=#软件>软件</a><ol><li><a href=#网络配置>网络配置</a></li><li><a href=#设置root密码>设置root密码</a></li><li><a href=#禁用linux-kernel自动更新>禁用Linux kernel自动更新</a></li><li><a href=#反向代理>反向代理</a></li><li><a href=#值得被做的准备>值得被做的准备</a></li><li><a href=#分盘>分盘</a></li><li><a href=#nfs共享文件系统>NFS共享文件系统</a><ol><li><a href=#nfs服务器节点>NFS服务器节点</a></li><li><a href=#客户端节点>客户端节点</a></li></ol></li><li><a href=#infiniband-driver>InfiniBand Driver</a></li><li><a href=#cuda>CUDA</a><ol><li><a href=#禁用卸载nouveau驱动非必要>禁用/卸载Nouveau驱动(非必要)</a></li><li><a href=#安装驱动>安装驱动</a></li><li><a href=#卸载驱动>卸载驱动</a></li><li><a href=#安装cuda>安装CUDA</a></li></ol></li></ol></li></ol></nav></div></section></aside><main class="main full-width"><article class="has-image main-article"><header class=article-header><div class=article-image><a href=/p/ops1/><img src=/p/ops1/img/cover_hu_f437f78a1a4c19ce.png srcset="/p/ops1/img/cover_hu_f437f78a1a4c19ce.png 800w, /p/ops1/img/cover_hu_a2b1f9076c301d67.png 1600w" width=800 height=830 loading=lazy alt="Featured image of post 高性能集群运维——装机"></a></div><div class=article-details><header class=article-category><a href=/categories/%E6%96%87%E6%A1%A3/ style=background-color:#2a9d8f;color:#fff>文档
+</a><a href=/categories/%E8%BF%90%E7%BB%B4/ style=background-color:#519aba;color:#fff>运维</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/ops1/>高性能集群运维——装机</a></h2><h3 class=article-subtitle>运维笔记（一）</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Apr 23, 2025</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 5 分钟</time></div></footer></div></header><section class=article-content><p>这段时间和机房打交道比较多，负责对接了来三江源数据分析中心安装新采购机器的工程师和学院的运维老师，所以来总结一下这段时间搭建高性能集群的经验。</p><h2 id=硬件>硬件</h2><h3 id=组装>组装</h3><p>新采购的整机服务器，硬盘、内存条、网卡（Ethernet）、RAID卡都是在的，务必保证启动时，主电源和备用电源都是亮灯状态。机器配置如下，分别是两台Intel双路处理器和两台AMD双路处理器的机器，RDMA网卡是分开采购的Mellanox MT28908（ConnectX-6）。从高性能计算中心借用了8张NVIDIA A800 80GB PCIE，预期拓扑是四机八卡。</p><div class=table-wrapper><table><thead><tr><th style=text-align:center>Server</th><th style=text-align:center>CPU</th><th style=text-align:center>Memory</th><th style=text-align:center>Hard Disk</th></tr></thead><tbody><tr><td style=text-align:center>H3C UniServer R4900 G6</td><td style=text-align:center>Intel(R) Xeon(R) GOLD 6542Y(250w)×2</td><td style=text-align:center>32G DDR5 5600×8</td><td style=text-align:center>960G SSD×2 + 4TB SATA×3 + RAID PM8204-2G</td></tr><tr><td style=text-align:center>H3C UniServer R4950 G6</td><td style=text-align:center>AMD EPYC 9654 96-Core Processor(360w)×2</td><td style=text-align:center>32G DDR5 4800×8</td><td style=text-align:center>960G SSD×2 + 4TB SATA×3 + RAID PM8204-2G</td></tr></tbody></table></div><p><img src=/p/ops1/img/1.jpg width=1706 height=1279 srcset="/p/ops1/img/1_hu_bb1e35933ff472ee.jpg 480w, /p/ops1/img/1_hu_62c9eb2d339f6923.jpg 1024w" loading=lazy alt=服务器内部 class=gallery-image data-flex-grow=133 data-flex-basis=320px></p><h3 id=制作启动盘>制作启动盘</h3><p>需要准备可引导ISO、烧录软件(<a class=link href=https://rufus.ie/en/ target=_blank rel=noopener>Rufus</a>或<a class=link href=https://ultraiso.net/ target=_blank rel=noopener>UltraISO</a>)和一个U盘(最好是USB3.0)。这里选择服务器端<code>Ubuntu Server 22.04.5 LTS</code>(上一个Ubuntu Server长期支持版，支持到2027年4月)，在<a class=link href=https://cn.ubuntu.com/download target=_blank rel=noopener>Ubuntu官网</a>获取可引导ISO文件。</p><p><img src=/p/ops1/img/2.png width=1021 height=168 srcset="/p/ops1/img/2_hu_251188e3c06ef52f.png 480w, /p/ops1/img/2_hu_768c422f8277994a.png 1024w" loading=lazy alt=ISO文件 class=gallery-image data-flex-grow=607 data-flex-basis=1458px></p><p>接下来用烧录软件写入硬盘镜像，UltraISO注意选择写入方式为<code>USB-HDD+</code>，Rufus注意选择目标系统类型为<code>BIOS或UEFI</code>，文件系统和其他设置根据需求配置。格式化U盘后即可写入系统镜像（约2-3分钟）。</p><p><img src=/p/ops1/img/3.png width=594 height=872 srcset="/p/ops1/img/3_hu_28e743b8c1b2b821.png 480w, /p/ops1/img/3_hu_20f4ccebb4416ce6.png 1024w" loading=lazy alt=Rufus制作启动盘 class=gallery-image data-flex-grow=68 data-flex-basis=163px> <img src=/p/ops1/img/4.png width=465 height=432 srcset="/p/ops1/img/4_hu_65c97b132529007e.png 480w, /p/ops1/img/4_hu_6c791af9e004dbfb.png 1024w" loading=lazy alt=UltraISO制作启动盘 class=gallery-image data-flex-grow=107 data-flex-basis=258px></p><h2 id=软件>软件</h2><h3 id=网络配置>网络配置</h3><p>一般在系统安装时先不配置，安装完成后通过<code>ip link show</code>查看网口名。通过<code>vim /etc/netplan/50-cloud-init.yaml</code>，配置如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=c1># ...</span>
+</span></span><span class=line><span class=cl>network:
+</span></span><span class=line><span class=cl>    ethernets:
+</span></span><span class=line><span class=cl>        ens16f0:
+</span></span><span class=line><span class=cl>            addresses:
+</span></span><span class=line><span class=cl>            - &lt;A.B.C.D&gt;/24
+</span></span><span class=line><span class=cl>            nameservers:
+</span></span><span class=line><span class=cl>                addresses: <span class=o>[]</span>
+</span></span><span class=line><span class=cl>                search: <span class=o>[]</span>
+</span></span><span class=line><span class=cl>            routes:
+</span></span><span class=line><span class=cl>            -   to: default
+</span></span><span class=line><span class=cl>                via: &lt;A.B.C.D&gt;
+</span></span><span class=line><span class=cl>    version: <span class=m>2</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=设置root密码>设置root密码</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>su root
+</span></span><span class=line><span class=cl>passwd root
+</span></span></code></pre></td></tr></table></div></div><h3 id=禁用linux-kernel自动更新>禁用Linux kernel自动更新</h3><p>如果不禁用的话,每次<code>apt update</code>后都会提示你是否需要重启服务并更新。修改<code>/etc/apt/apt.conf.d/</code>下的<code>10periodic</code>和<code>20auto-upgrades</code>内的参数为<code>0</code>即可。</p><p><code>sudo vim /etc/apt/apt.conf.d/10periodic</code></p><p>更新为:</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>APT::Periodic::Update-Package-Lists <span class=s2>&#34;0&#34;</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>APT::Periodic::Download-Upgradeable-Packages <span class=s2>&#34;0&#34;</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>APT::Periodic::AutocleanInterval <span class=s2>&#34;0&#34;</span><span class=p>;</span>
+</span></span></code></pre></td></tr></table></div></div><p><code>sudo vim /etc/apt/apt.conf.d/20auto-upgrades</code></p><p>更新为:</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>APT::Periodic::Update-Package-Lists <span class=s2>&#34;0&#34;</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>APT::Periodic::Unattended-Upgrade <span class=s2>&#34;0&#34;</span><span class=p>;</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=反向代理>反向代理</h3><p>由于计算节点不联网，因此把本地作为跳板机进行反向代理。</p><p>修改本地<code>Users/username/.ssh/config</code>:</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>Host &lt;hostname&gt;
+</span></span><span class=line><span class=cl>  HostName &lt;IP&gt;
+</span></span><span class=line><span class=cl>  Port &lt;port&gt;
+</span></span><span class=line><span class=cl>  User &lt;username&gt;
+</span></span><span class=line><span class=cl>  RemoteForward &lt;Port1&gt; 127.0.0.1:&lt;Port2&gt;
+</span></span></code></pre></td></tr></table></div></div><p>补充一点最近刚学到的，在<code>.ssh/config</code>中通过配置<code>ProxyJump</code>来实现无缝跳板连接的方法。需要注意的是，如果需要免密的话，需要在destination主机的<code>~/.ssh/authorized_keys</code>加入<strong>本地</strong>公钥。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>Host &lt;hostname&gt;
+</span></span><span class=line><span class=cl>  HostName &lt;IP&gt;
+</span></span><span class=line><span class=cl>  Port &lt;port&gt;
+</span></span><span class=line><span class=cl>  User &lt;username&gt;
+</span></span><span class=line><span class=cl>  RemoteForward &lt;Port1&gt; 127.0.0.1:&lt;Port2&gt;
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>Host &lt;destination&gt;
+</span></span><span class=line><span class=cl>  HostName &lt;IP&gt;
+</span></span><span class=line><span class=cl>  Port &lt;port&gt;
+</span></span><span class=line><span class=cl>  User &lt;username&gt;
+</span></span><span class=line><span class=cl>  ProxyJump &lt;hostname&gt;
+</span></span><span class=line><span class=cl>  RemoteForward &lt;Port1&gt; 127.0.0.1:&lt;Port2&gt;
+</span></span></code></pre></td></tr></table></div></div><h3 id=值得被做的准备>值得被做的准备</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=c1># 禁用Linux自动休眠</span>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> <span class=s2>&#34;\$nrconf{kernelhints} = 0;&#34;</span> &gt;&gt; /etc/needrestart/needrestart.conf
+</span></span><span class=line><span class=cl><span class=nb>echo</span> <span class=s2>&#34;\$nrconf{restart} = &#39;l&#39;;&#34;</span> &gt;&gt; /etc/needrestart/needrestart.conf
+</span></span><span class=line><span class=cl>systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+</span></span><span class=line><span class=cl><span class=c1># 更新apt和apt-get</span>
+</span></span><span class=line><span class=cl>apt update
+</span></span><span class=line><span class=cl>apt upgrade
+</span></span><span class=line><span class=cl>apt-get update
+</span></span><span class=line><span class=cl>apt-get upgrade
+</span></span><span class=line><span class=cl><span class=c1># 安装一些必要组件</span>
+</span></span><span class=line><span class=cl>apt install git wget vim curl htop net-tools pciutils build-essential 
+</span></span></code></pre></td></tr></table></div></div><h3 id=分盘>分盘</h3><p>如果不识别硬盘，可能在系统安装阶段就报错<code>block probing did not discover any disks</code>，检查硬盘、RIAD卡是否亮灯。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>lsblk <span class=c1># 确认新硬盘设备名称(如/dev/sdX)</span>
+</span></span><span class=line><span class=cl>sudo pvcreate /dev/sdb /dev/sdc /dev/sdd <span class=c1># 创建物理卷PV</span>
+</span></span><span class=line><span class=cl>sudo vgcreate vg_home /dev/sdb /dev/sdc /dev/sdd <span class=c1># 创建卷组VG</span>
+</span></span><span class=line><span class=cl>vgdisplay <span class=c1># 检查卷组信息</span>
+</span></span><span class=line><span class=cl>sudo lvcreate -l 100%FREE -n lv_home vg_home <span class=c1># 创建一个逻辑卷，占用卷组的全部空间</span>
+</span></span><span class=line><span class=cl>sudo mkfs.ext4 /dev/vg_home/lv_home <span class=c1># 格式化逻辑卷为ext4文件系统</span>
+</span></span><span class=line><span class=cl>sudo mount /dev/vg_home/lv_home /home <span class=c1># 挂载逻辑卷到/home</span>
+</span></span><span class=line><span class=cl><span class=c1># 自动挂载</span>
+</span></span><span class=line><span class=cl>sudo blkid /dev/vg_home/lv_home <span class=c1># 获取逻辑卷的UUID</span>
+</span></span><span class=line><span class=cl>sudo vim /etc/fstab
+</span></span><span class=line><span class=cl>&gt;&gt;&gt; <span class=nv>UUID</span><span class=o>=</span>&lt;UUID&gt; /home ext4 defaults <span class=m>0</span> <span class=m>2</span>
+</span></span><span class=line><span class=cl>sudo mount -a
+</span></span><span class=line><span class=cl>df -a <span class=c1># 验证</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=nfs共享文件系统>NFS共享文件系统</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>sudo apt install nfs-kernel-server nfs-common rdma-core <span class=c1># 所有节点都执行</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=nfs服务器节点>NFS服务器节点</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>sudo mkdir -p /home
+</span></span><span class=line><span class=cl>sudo chmod <span class=m>777</span> /home
+</span></span><span class=line><span class=cl>sudo vim /etc/exports
+</span></span><span class=line><span class=cl>&gt;&gt;&gt; /home *<span class=o>(</span>rw,sync,no_root_squash<span class=o>)</span> 
+</span></span><span class=line><span class=cl>sudo vim /etc/nfs.conf <span class=c1># 启用RMDA</span>
+</span></span><span class=line><span class=cl>&gt;&gt;&gt; <span class=o>[</span>nfsd<span class=o>]</span>
+</span></span><span class=line><span class=cl>&gt;&gt;&gt; <span class=nv>rdma</span><span class=o>=</span>y
+</span></span><span class=line><span class=cl>sudo systemctl restart nfs-kernel-server
+</span></span><span class=line><span class=cl>sudo systemctl <span class=nb>enable</span> nfs-kernel-server
+</span></span></code></pre></td></tr></table></div></div><h4 id=客户端节点>客户端节点</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>sudo mount -o rdma,vers<span class=o>=</span>4.2 &lt;server_ip&gt;:/home /home
+</span></span><span class=line><span class=cl>df -h <span class=p>|</span> grep /home <span class=c1># 检查挂载是否成功</span>
+</span></span><span class=line><span class=cl>sudo vim /etc/fstab <span class=c1># 设置开机自动挂载</span>
+</span></span><span class=line><span class=cl>&gt;&gt;&gt; &lt;server_ip&gt;:/home /home nfs4 rdma,vers<span class=o>=</span>4.2 <span class=m>0</span> <span class=m>0</span>
+</span></span></code></pre></td></tr></table></div></div><p>验证RMDA传输:</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>mount <span class=p>|</span> grep /home
+</span></span><span class=line><span class=cl>cat /proc/fs/nfsfs/servers <span class=c1># 看transport列是否为rdma</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=infiniband-driver>InfiniBand Driver</h3><p>驱动下载：<a class=link href=https://developer.nvidia.com/networking/infiniband-software target=_blank rel=noopener>NVIDIA InfiniBand Software | NVIDIA | NVIDIA Developer</a></p><p>MLNX_OFED：<a class=link href=https://network.nvidia.com/products/infiniband-drivers/linux/mlnx_ofed/ target=_blank rel=noopener>Linux InfiniBand Drivers</a></p><p>对于旧版本的IB，请务必查看Release Note确认是否支持。</p><p>查看IB设备：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>lspci <span class=p>|</span> grep -i mell
+</span></span></code></pre></td></tr></table></div></div><p>打开IB的opensm服务：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=c1># 如果没有安装</span>
+</span></span><span class=line><span class=cl>sudo apt update <span class=o>&amp;&amp;</span> sudo apt upgrad -y
+</span></span><span class=line><span class=cl>sudo apt install opensm infiniband-diags ibutils perftest -y
+</span></span><span class=line><span class=cl>sudo systemctl start opensm
+</span></span><span class=line><span class=cl>systemctl status opensm
+</span></span><span class=line><span class=cl>sudo systemctl <span class=nb>enable</span> opensm <span class=c1># 开机自启</span>
+</span></span></code></pre></td></tr></table></div></div><p>验证能否正常识别IB设备：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>ibv_devinfo
+</span></span><span class=line><span class=cl>ibstat
+</span></span></code></pre></td></tr></table></div></div><p>测试服务器和客户端的ib带宽：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>ibv_devices # 查询设备名称, 如mlx5_0
+</span></span><span class=line><span class=cl>ib_read_bw -a -d &lt;device_name&gt; --report_gbits # 服务器
+</span></span><span class=line><span class=cl>ib_read_bw -a -F &lt;ip_addr&gt; -d &lt;device_name&gt; --report_gbits # 客户端 (-a测试所有消息大小, -F强制使用服务端连接(需要服务端先启动), --report_gbits以Gbps显示带宽结果)
+</span></span></code></pre></td></tr></table></div></div><p><img src=/p/ops1/img/5.png width=963 height=519 srcset="/p/ops1/img/5_hu_f8e8a75cb7118797.png 480w, /p/ops1/img/5_hu_74fb876c2119a040.png 1024w" loading=lazy alt=服务端 class=gallery-image data-flex-grow=185 data-flex-basis=445px> <img src=/p/ops1/img/6.png width=970 height=453 srcset="/p/ops1/img/6_hu_7e1ab7d68969d9d7.png 480w, /p/ops1/img/6_hu_7220da68564e190e.png 1024w" loading=lazy alt=客户端 class=gallery-image data-flex-grow=214 data-flex-basis=513px></p><p>设置IB的MTU（最大传输单元）：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>ifconfig <span class=p>|</span> grep ib <span class=c1># 查询</span>
+</span></span><span class=line><span class=cl>ifconfig ib0 mtu <span class=m>65520</span> <span class=c1># 保证两台机器的IB接口配置相同的MTU</span>
+</span></span></code></pre></td></tr></table></div></div><blockquote><p>简单测试：<code>ibping</code>和<code>ibping &lt;ip_addr></code>即可</p></blockquote><h3 id=cuda>CUDA</h3><h4 id=禁用卸载nouveau驱动非必要>禁用/卸载Nouveau驱动(非必要)</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>sudo vim /etc/modprobe.d/blacklist.conf
+</span></span></code></pre></td></tr></table></div></div><p>在最后两行加入：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>blacklist nouveau
+</span></span><span class=line><span class=cl>options nouveau <span class=nv>modeset</span><span class=o>=</span><span class=m>0</span>
+</span></span></code></pre></td></tr></table></div></div><p>重建initramfs并重启服务器使其生效：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>sudo update-initramfs -u
+</span></span><span class=line><span class=cl>sudo reboot
+</span></span></code></pre></td></tr></table></div></div><p>通过<code>lsmod | grep nouveau</code>验证，若没有输出则禁用成功。</p><h4 id=安装驱动>安装驱动</h4><p>查看GPU型号：<code>lspci | grep -i nvidia</code></p><p>驱动下载：<a class=link href=https://www.nvidia.com/en-us/drivers/ target=_blank rel=noopener>NVIDIA Driver</a></p><blockquote><p>A800/V100 for CUDA12.6：
+<a class=link href=https://www.nvidia.com/en-us/drivers/details/231430/ target=_blank rel=noopener>Data Center Driver for Linux x64 560.35.03 | Linux 64-bit | NVIDIA</a></p></blockquote><h4 id=卸载驱动>卸载驱动</h4><p><code>sudo /usr/bin/nvidia-uninstall</code></p><h4 id=安装cuda>安装CUDA</h4><p>CUDA：<a class=link href=https://developer.nvidia.com/cuda-downloads target=_blank rel=noopener>CUDA Toolkit 12.6 Update 3 Downloads | NVIDIA Developer</a></p><p>CUDA Toolkit：<a class=link href=https://developer.nvidia.com/cuda-toolkit-archive target=_blank rel=noopener>CUDA Toolkit Archive | NVIDIA Developer</a></p><p><code>NVCC</code>需要完整的cuda toolkit，只需要在<a class=link href=https://developer.nvidia.com/cuda-downloads target=_blank rel=noopener>官网</a>找到对应cuda版本的下载版本（建议通过runfile(local)方式），按照提供的命令<code>wget</code>和<code>sudo run</code>即可：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl><span class=c1># 以CUDA Toolkit 12.2为例</span>
+</span></span><span class=line><span class=cl>wget https://developer.download.nvidia.com/compute/cuda/12.9.1/local_installers/cuda_12.9.1_575.57.08_linux.run
+</span></span><span class=line><span class=cl>sudo sh cuda_12.9.1_575.57.08_linux.run
+</span></span></code></pre></td></tr></table></div></div><p>不需要重新安装驱动，安装完成后写入环境变量：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl><span class=nb>echo</span> <span class=s1>&#39;export PATH=/usr/local/cuda-12.2/bin:$PATH&#39;</span> &gt;&gt; ~/.bashrc
+</span></span><span class=line><span class=cl><span class=nb>echo</span> <span class=s1>&#39;export LD_LIBRARY_PATH=/usr/local/cuda-12.2/lib64:$LD_LIBRARY_PATH&#39;</span> &gt;&gt; ~/.bashrc
+</span></span><span class=line><span class=cl><span class=nb>source</span> ~/.bashrc
+</span></span></code></pre></td></tr></table></div></div><p>如果望默认用<code>/usr/local/cuda</code>路径访问，也可以创建软链接:</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>sudo ln -s /usr/local/cuda-12.2 /usr/local/cuda
+</span></span><span class=line><span class=cl><span class=nb>echo</span> <span class=s1>&#39;export PATH=/usr/local/cuda/bin:$PATH&#39;</span> &gt;&gt; ~/.bashrc
+</span></span><span class=line><span class=cl><span class=nb>echo</span> <span class=s1>&#39;export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH&#39;</span> &gt;&gt; ~/.bashrc
+</span></span><span class=line><span class=cl><span class=nb>source</span> ~/.bashrc
+</span></span></code></pre></td></tr></table></div></div></section><footer class=article-footer><section class=article-tags><a href=/tags/%E6%96%87%E6%A1%A3/>文档</a>
+<a href=/tags/%E8%BF%90%E7%BB%B4/>运维</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section></footer><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css integrity=sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV crossorigin=anonymous><script src=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js integrity=sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8 crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js integrity=sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05 crossorigin=anonymous defer></script><script>window.addEventListener("DOMContentLoaded",()=>{const e=document.querySelector(".main-article");renderMathInElement(e,{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1},{left:"\\(",right:"\\)",display:!1},{left:"\\[",right:"\\]",display:!0}],ignoredClasses:["gist"]})})</script></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article class=has-image><a href=/p/ops3/><div class=article-image><img src=/p/ops3/img/cover.830b1e9ba33d542d3a78879c36de1956_hu_dfa7a787fd4a199a.jpg width=250 height=150 loading=lazy alt='Featured image of post 对MacOS的初步探索：MacOS "Subsystem" for Linux' data-key=Ops3 data-hash="md5-gwsem6M9VC06eIecNt4ZVg=="></div><div class=article-details><h2 class=article-title>对MacOS的初步探索：MacOS "Subsystem" for Linux</h2></div></a></article><article class=has-image><a href=/p/ops2/><div class=article-image><img src=/p/ops2/img/cover2.d5f8171993ade52fb351a98fb568d7cf_hu_5822e24e3dfba3fd.png width=250 height=150 loading=lazy alt="Featured image of post 高性能集群运维——软件环境（Modules、MPI、oneAPI）" data-key=Ops2 data-hash="md5-1fgXGZOt5S+zUamPtWjXzw=="></div><div class=article-details><h2 class=article-title>高性能集群运维——软件环境（Modules、MPI、oneAPI）</h2></div></a></article><article class=has-image><a href=/p/llm3/><div class=article-image><img src=/p/llm3/img/cover.1e2c906a89d3e1641161237e9d228d85_hu_c2dccf53b54c7c8f.jpg width=250 height=150 loading=lazy alt="Featured image of post Infra入门——An Overview of AI Infra" data-key=llm3 data-hash="md5-HiyQaonT4WQRYSN+nSKNhQ=="></div><div class=article-details><h2 class=article-title>Infra入门——An Overview of AI Infra</h2></div></a></article><article class=has-image><a href=/p/hpc1/><div class=article-image><img src=/p/hpc1/img/cover.71e6162ba557f0a391bc5e9e5533f13f_hu_ea8068ab11796830.png width=250 height=150 loading=lazy alt="Featured image of post 并发环境下的队列优化——无锁队列" data-key=hpc1 data-hash="md5-ceYWK6VX8KORvF6eVTPxPw=="></div><div class=article-details><h2 class=article-title>并发环境下的队列优化——无锁队列</h2></div></a></article><article class=has-image><a href=/p/hello-world/><div class=article-image><img src=/p/hello-world/img/cover.875f03a2ec7ba6cf35d6c32b0e811dab_hu_92077aa9cb038470.jpg width=250 height=150 loading=lazy alt="Featured image of post Hello World" data-key=hello-world data-hash="md5-h18Doux7ps811sMrDoEdqw=="></div><div class=article-details><h2 class=article-title>Hello World</h2></div></a></article></div></div></aside><script src=https://utteranc.es/client.js repo=KaigeZheng/KaigeZheng.github.io issue-term=pathname crossorigin=anonymous async></script><style>.utterances{max-width:unset}</style><script>let utterancesLoaded=!1;function setUtterancesTheme(e){let t=document.querySelector(".utterances iframe");t&&t.contentWindow.postMessage({type:"set-theme",theme:`github-${e}`},"https://utteranc.es")}addEventListener("message",e=>{if(e.origin!=="https://utteranc.es")return;utterancesLoaded=!0,setUtterancesTheme(document.documentElement.dataset.scheme)}),window.addEventListener("onColorSchemeChange",e=>{if(!utterancesLoaded)return;setUtterancesTheme(e.detail)})</script><footer class=site-footer><section class=copyright>&copy;
+2024 -
+2025 Kambri's Blog</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

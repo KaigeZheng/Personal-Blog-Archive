@@ -1,0 +1,374 @@
+<!doctype html><html lang=en-us dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="高性能计算学习笔记（一）"><title>并发环境下的队列优化——无锁队列</title><link rel=canonical href=https://kaigezheng.github.io/p/hpc1/><link rel=stylesheet href=/scss/style.min.f0b427a7e322d7ca4439d64cb0fb1eab709bbe5dc0a5bf10c9071e75f49fced4.css><meta property='og:title' content="并发环境下的队列优化——无锁队列"><meta property='og:description' content="高性能计算学习笔记（一）"><meta property='og:url' content='https://kaigezheng.github.io/p/hpc1/'><meta property='og:site_name' content="Kambri's Blog"><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='文档'><meta property='article:tag' content='HPC'><meta property='article:published_time' content='2025-07-30T00:23:00+08:00'><meta property='article:modified_time' content='2025-07-30T00:23:00+08:00'><meta property='og:image' content='https://kaigezheng.github.io/p/hpc1/img/cover.png'><meta name=twitter:title content="并发环境下的队列优化——无锁队列"><meta name=twitter:description content="高性能计算学习笔记（一）"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content='https://kaigezheng.github.io/p/hpc1/img/cover.png'><link rel="shortcut icon" href=/favicon.png></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu_98fe1fefb25c1393.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>🫠</span></figure><div class=site-meta><h1 class=site-name><a href=/>Kambri's Blog</a></h1><h2 class=site-description>你好！这里是Kambri的技术&生活博客，我将在这里分享技术经验和记录生活。</h2></div></header><ol class=menu-social><li><a href=https://github.com/KaigeZheng target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=mailto:kambrikg@gmail.com target=_blank title=邮箱(kambrikg@gmail.com) rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mail"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/><path d="M3 7l9 6 9-6"/></svg></a></li><li><a href=https://kaigezheng.github.io/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页|Home</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档|Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索|Search</span></a></li><li><a href=/links/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>友链|Links</span></a></li><li><a href=/devlog/><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-logs"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 12h.01"/><path d="M4 6h.01"/><path d="M4 18h.01"/><path d="M8 18h2"/><path d="M8 12h2"/><path d="M8 6h2"/><path d="M14 6h6"/><path d="M14 12h6"/><path d="M14 18h6"/></svg>
+<span>日志|Logs</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#前言>前言</a></li><li><a href=#preliminaries>Preliminaries</a><ol><li><a href=#cas-compare-and-swap>CAS (Compare-And-Swap)</a></li><li><a href=#aba-problem>ABA Problem</a></li><li><a href=#atomic-operator>Atomic Operator</a></li><li><a href=#volatile-keyword>Volatile Keyword</a></li></ol></li><li><a href=#lock-free-queue>Lock-Free Queue</a></li><li><a href=#reference>Reference</a></li></ol></nav></div></section></aside><main class="main full-width"><article class="has-image main-article"><header class=article-header><div class=article-image><a href=/p/hpc1/><img src=/p/hpc1/img/cover_hu_2db53da4997df0d3.png srcset="/p/hpc1/img/cover_hu_2db53da4997df0d3.png 800w, /p/hpc1/img/cover_hu_4e491d6da9e1e236.png 1600w" width=800 height=377 loading=lazy alt="Featured image of post 并发环境下的队列优化——无锁队列"></a></div><div class=article-details><header class=article-category><a href=/categories/%E6%96%87%E6%A1%A3/ style=background-color:#2a9d8f;color:#fff>文档
+</a><a href=/categories/hpc/ style=background-color:#0548f1;color:#fff>HPC</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/hpc1/>并发环境下的队列优化——无锁队列</a></h2><h3 class=article-subtitle>高性能计算学习笔记（一）</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Jul 30, 2025</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 6 分钟</time></div></footer></div></header><section class=article-content><h2 id=前言>前言</h2><p>有一个多月没写博客了，在网上冲浪时偶然看到关于<em>无锁队列</em>的blog，突然想到了在ASC25初赛优化hisat-3n-table时面对互斥锁超级加倍的<code>SafeQueue</code>时的头疼，或许能够使用互斥锁来优化，突然就来了兴致学习，因此这篇blog就诞生了。</p><h2 id=preliminaries>Preliminaries</h2><h3 id=cas-compare-and-swap>CAS (Compare-And-Swap)</h3><p>CAS(Compare-And-Swap, 比较并交换)是并发编程中常用的一种原子操作，广泛用于实现无锁（lock-free）算法，核心思想是：<strong>只有当变量的值是预期值时，才将其更新为新值；否则不做任何操作</strong>。</p><p>CAS操作涉及三个操作数：</p><ul><li><p><code>内存地址V</code> 需要被更新的变量</p></li><li><p><code>旧值A</code> (expected) 当前线程认为变量的值</p></li><li><p><code>新值B</code> (new_val) 希望写入的新值</p></li></ul><p>计算逻辑如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-cpp data-lang=cpp><span class=line><span class=cl><span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+</span></span><span class=line><span class=cl><span class=kt>bool</span> <span class=n>CAS</span><span class=p>(</span><span class=n>T</span><span class=o>*</span> <span class=n>addr</span><span class=p>,</span> <span class=n>T</span><span class=o>&amp;</span> <span class=n>expected</span><span class=p>,</span> <span class=k>const</span> <span class=n>T</span><span class=o>&amp;</span> <span class=n>new_val</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span><span class=p>(</span><span class=o>*</span><span class=n>addr</span> <span class=o>==</span> <span class=n>expected</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=o>*</span><span class=n>addr</span> <span class=o>=</span> <span class=n>new_val</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=nb>true</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=k>new</span> <span class=o>=</span> <span class=o>*</span><span class=n>addr</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=nb>false</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>在GCC中，通过内建函数<code>__sync_bool_compare_and_swap(&amp;addr, expected, new_val)</code>来实现；在C++11后，通过原子操作函数<code>atomic_compare_exchange_strong(&amp;addr, &amp;expected, new_val)</code>（引用<code>expected</code>，CAS失败时会被更新为当前内存值）来实现。</p><blockquote><p>weak允许伪失败（值匹配时更新失败），性能更高，常用于循环结构；strong不允许失败，性能一般，但安全可靠。</p></blockquote><h3 id=aba-problem>ABA Problem</h3><p>CAS会导致ABA问题，即一个变量的值从A变成B，然后又变回A，而CAS检查时只看到了“值还是A”，误以为没有变化，导致错误的原子更新。</p><p>在引用计数、资源管理（如从栈pop一个节点，然后被别的线程push回去，用旧指针处理时可能会重复删除或释放后访问）等场景，ABA问题会导致资源错误地释放或复用。一种比较简单易懂的解决方法是从“值比较”变成”值+标记比较”，可以通过DWCAS(Double-Width CAS)实现，在64-bit环境下，用双倍大小的指针，在原指针后附加计数器。另一种解决方法是提前分配内存的环形缓冲。</p><h3 id=atomic-operator>Atomic Operator</h3><p>原子操作（Atomic Operator）是指在多线程环境中执行的不可分割的操作，执行过程中不会被中断。这样可以避免竞态条件，实现线程安全。</p><ul><li>Test-And-Set, TAS</li></ul><p>常见的原子加锁原语，如果为true则返回true，如果为false则设置为true并返回false，由<code>__sync_lock_test_and_set</code>支持：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-cpp data-lang=cpp><span class=line><span class=cl><span class=kt>bool</span> <span class=nf>TAS</span><span class=p>(</span><span class=kt>bool</span> <span class=o>*</span><span class=n>flag</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kt>bool</span> <span class=n>ret</span> <span class=o>=</span> <span class=o>*</span><span class=n>flag</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=o>*</span><span class=n>flag</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>ret</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li><p>Compared-And-Swap, CAS</p></li><li><p>Atomic Exchange</p></li></ul><p>用一个新值替换旧值，返回旧值，由<code>__atomic_exchange_n</code>支持：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-cpp data-lang=cpp><span class=line><span class=cl><span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+</span></span><span class=line><span class=cl><span class=n>T</span> <span class=n>Exchange</span><span class=p>(</span><span class=n>T</span><span class=o>*</span> <span class=n>addr</span><span class=p>,</span> <span class=k>const</span> <span class=n>T</span><span class=o>&amp;</span> <span class=n>new_val</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>T</span> <span class=n>old_val</span> <span class=o>=</span> <span class=o>*</span><span class=n>addr</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=o>*</span><span class=n>addr</span> <span class=o>=</span> <span class=n>new_val</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>old_val</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li>Atomic Load/Store</li></ul><p>从共享变量中安全读取或写入数据，由<code>__atomic_load_n</code>或<code>atomic_store_n</code>支持：</p><ul><li>Atomic Clear</li></ul><p>常与TAS配合使用，实现释放/复位（就是设置为false），由<code>__sync_lock_release</code>支持。</p><ul><li>Atomic Fetch Add/Sub</li></ul><p>对指定位置内存的值通过<strong>传参</strong>进行加减，分别由<code>__sync_fetch_and_add</code>和<code>__sync_fetch_and_sub</code>支持，也可以用<code>__atomic_fetch_add</code>和<code>__atomic_fetch_sub</code>等价。乘和除似乎没有内建函数的支持。</p><h3 id=volatile-keyword>Volatile Keyword</h3><p>在C++中，<code>volatile</code>是一个类型修饰符，用于高速编译器该变量的值可能在程序政策控制流程之外被改变（如多线程、硬件中断、特殊寄存器等），因此编译器不应对其进行某些优化，必须<strong>每次都从内存中读取值</strong>，而不是使用寄存器中的缓存值（禁用常量优化）。</p><p>如在以下的基于CAS的无锁队列出队操作中，需要将<code>_head</code>与<code>head</code>声明为<code>volatile</code>，否则可能会被编译器优化掉<code>_head</code>与<code>head</code>的比较：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-cpp data-lang=cpp><span class=line><span class=cl><span class=k>do</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>res</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=n>newHead</span> <span class=o>=</span> <span class=n>res</span><span class=o>-&gt;</span><span class=n>next</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=k>while</span><span class=p>(</span><span class=o>!</span><span class=n>CAS</span><span class=p>(</span><span class=n>_head</span><span class=p>,</span> <span class=n>head</span><span class=p>,</span> <span class=n>newHead</span><span class=p>));</span>
+</span></span></code></pre></td></tr></table></div></div><blockquote><p>在循环中，尝试获取头指针并后移（弹出当前头指针），<code>CAS(_head, head, newHead)</code>尝试用原子操作将<code>_head</code>从<code>head</code>更新为<code>newHead</code>，这个操作只有在<code>_head == head</code>时才会成功；如果CAS失败（说明<code>_head</code>被其他线程改动过），旧充新读取<code>_head</code>并再次尝试，直到成功</p></blockquote><h2 id=lock-free-queue>Lock-Free Queue</h2><p>接下来参考@Clawko和GPT-4o的思路，实现一个基于Double-Width CAS的无锁队列，但不局限于原作者基于Windows/x86-64指令的实现，主要基于Linux/x86-64环境。实现这个无锁队列的过程中也从前人的经验中学习到了很多。完整的实现和带锁队列并发测试代码在<a class=link href=https://github.com/KaigeZheng/LockFreeQueue target=_blank rel=noopener>GitHub仓库</a>中，建议跳转阅读，欢迎参考与优化。</p><p>核心思路如下：</p><ul><li><p>用<code>__int128</code>打包队列元素指针（低64位）与计数器（高64位），在入队/出队操作中不会显示地判断计数器情况，而是通过CAS内建函数来隐式地判断</p></li><li><p>入队/出队时，当tail被其他线程更新的同时，会进行帮助tail推进的“Lazy Optimization”</p></li><li><p>入队/出队的主要实现是循环结构的CAS</p></li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span><span class=lnt>121
+</span><span class=lnt>122
+</span><span class=lnt>123
+</span><span class=lnt>124
+</span><span class=lnt>125
+</span><span class=lnt>126
+</span><span class=lnt>127
+</span><span class=lnt>128
+</span><span class=lnt>129
+</span><span class=lnt>130
+</span><span class=lnt>131
+</span><span class=lnt>132
+</span><span class=lnt>133
+</span><span class=lnt>134
+</span><span class=lnt>135
+</span><span class=lnt>136
+</span><span class=lnt>137
+</span><span class=lnt>138
+</span><span class=lnt>139
+</span><span class=lnt>140
+</span><span class=lnt>141
+</span><span class=lnt>142
+</span><span class=lnt>143
+</span><span class=lnt>144
+</span><span class=lnt>145
+</span><span class=lnt>146
+</span><span class=lnt>147
+</span><span class=lnt>148
+</span><span class=lnt>149
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-cpp data-lang=cpp><span class=line><span class=cl><span class=cp>#ifndef LOCKFREEQUEUE_H
+</span></span></span><span class=line><span class=cl><span class=cp>#define LOCKFREEQUEUE_H
+</span></span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;atomic&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;cstdint&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;cassert&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl><span class=cp>#include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span></span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cm>/*
+</span></span></span><span class=line><span class=cl><span class=cm>  Double-Width CAS Pointer
+</span></span></span><span class=line><span class=cl><span class=cm>*/</span>
+</span></span><span class=line><span class=cl><span class=k>struct</span> <span class=nc>Pointer</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kt>void</span><span class=o>*</span> <span class=n>ptr</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=kt>uint64_t</span> <span class=n>count</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>};</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>template</span><span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+</span></span><span class=line><span class=cl><span class=k>struct</span> <span class=nc>Node</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>T</span> <span class=n>data</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=n>std</span><span class=o>::</span><span class=n>atomic</span><span class=o>&lt;</span><span class=n>Node</span><span class=o>*&gt;</span> <span class=n>next</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=n>Node</span><span class=p>(</span><span class=n>T</span> <span class=n>val</span><span class=p>)</span> <span class=o>:</span> <span class=n>data</span><span class=p>(</span><span class=n>val</span><span class=p>),</span> <span class=n>next</span><span class=p>(</span><span class=k>nullptr</span><span class=p>)</span> <span class=p>{}</span>
+</span></span><span class=line><span class=cl>    <span class=n>Node</span><span class=p>()</span> <span class=o>:</span> <span class=n>next</span><span class=p>(</span><span class=k>nullptr</span><span class=p>)</span> <span class=p>{}</span> <span class=c1>// dummy node
+</span></span></span><span class=line><span class=cl><span class=p>};</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>template</span><span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>LockFreeQueue</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span><span class=o>:</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 使用__int128作为双宽CAS数据载体
+</span></span></span><span class=line><span class=cl>        <span class=k>typedef</span> <span class=n>__int128</span> <span class=n>AtomicPointerType</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// 头尾指针封装
+</span></span></span><span class=line><span class=cl>        <span class=k>struct</span> <span class=nc>PtrCount</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>Node</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;*</span> <span class=n>ptr</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=kt>uint64_t</span> <span class=n>count</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=p>};</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>std</span><span class=o>::</span><span class=n>atomic</span><span class=o>&lt;</span><span class=n>AtomicPointerType</span><span class=o>&gt;</span> <span class=n>head</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>std</span><span class=o>::</span><span class=n>atomic</span><span class=o>&lt;</span><span class=n>AtomicPointerType</span><span class=o>&gt;</span> <span class=n>tail</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// 将PtrCount打包成__int128
+</span></span></span><span class=line><span class=cl>        <span class=k>static</span> <span class=n>AtomicPointerType</span> <span class=nf>pack</span><span class=p>(</span><span class=n>PtrCount</span> <span class=n>pc</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>AtomicPointerType</span> <span class=n>val</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=c1>// 低64位放指针， 高64位放计数器
+</span></span></span><span class=line><span class=cl>            <span class=kt>uint64_t</span> <span class=n>ptrVal</span> <span class=o>=</span> <span class=k>reinterpret_cast</span><span class=o>&lt;</span><span class=kt>uint64_t</span><span class=o>&gt;</span><span class=p>(</span><span class=n>pc</span><span class=p>.</span><span class=n>ptr</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>            <span class=n>val</span> <span class=o>=</span> <span class=n>ptrVal</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=n>val</span> <span class=o>|=</span> <span class=p>(</span><span class=n>AtomicPointerType</span><span class=p>)</span><span class=n>pc</span><span class=p>.</span><span class=n>count</span> <span class=o>&lt;&lt;</span> <span class=mi>64</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=k>return</span> <span class=n>val</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// 将__int128拆成PtrCount
+</span></span></span><span class=line><span class=cl>        <span class=k>static</span> <span class=n>PtrCount</span> <span class=nf>unpack</span><span class=p>(</span><span class=n>AtomicPointerType</span> <span class=n>val</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>PtrCount</span> <span class=n>pc</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=n>pc</span><span class=p>.</span><span class=n>ptr</span> <span class=o>=</span> <span class=k>reinterpret_cast</span><span class=o>&lt;</span><span class=n>Node</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;*&gt;</span><span class=p>(</span><span class=k>static_cast</span><span class=o>&lt;</span><span class=kt>uint64_t</span><span class=o>&gt;</span><span class=p>(</span><span class=n>val</span> <span class=o>&amp;</span> <span class=mh>0xFFFFFFFFFFFFFFFF</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>            <span class=n>pc</span><span class=p>.</span><span class=n>count</span> <span class=o>=</span> <span class=k>static_cast</span><span class=o>&lt;</span><span class=kt>uint64_t</span><span class=o>&gt;</span><span class=p>(</span><span class=n>val</span> <span class=o>&gt;&gt;</span> <span class=mi>64</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>            <span class=k>return</span> <span class=n>pc</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=k>public</span><span class=o>:</span>
+</span></span><span class=line><span class=cl>        <span class=n>LockFreeQueue</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>Node</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;*</span> <span class=n>dummy</span> <span class=o>=</span> <span class=k>new</span> <span class=n>Node</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>            <span class=n>PtrCount</span> <span class=n>pc</span><span class=p>{</span><span class=n>dummy</span><span class=p>,</span> <span class=mi>0</span><span class=p>};</span>
+</span></span><span class=line><span class=cl>            <span class=n>head</span><span class=p>.</span><span class=n>store</span><span class=p>(</span><span class=n>pack</span><span class=p>(</span><span class=n>pc</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>            <span class=n>tail</span><span class=p>.</span><span class=n>store</span><span class=p>(</span><span class=n>pack</span><span class=p>(</span><span class=n>pc</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=o>~</span><span class=n>LockFreeQueue</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>PtrCount</span> <span class=n>h</span> <span class=o>=</span> <span class=n>unpack</span><span class=p>(</span><span class=n>head</span><span class=p>.</span><span class=n>load</span><span class=p>());</span>
+</span></span><span class=line><span class=cl>            <span class=k>while</span><span class=p>(</span><span class=n>h</span><span class=p>.</span><span class=n>ptr</span> <span class=o>!=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=n>Node</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;*</span> <span class=n>next</span> <span class=o>=</span> <span class=n>h</span><span class=p>.</span><span class=n>ptr</span><span class=o>-&gt;</span><span class=n>next</span><span class=p>.</span><span class=n>load</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>                <span class=k>delete</span> <span class=n>h</span><span class=p>.</span><span class=n>ptr</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=n>h</span><span class=p>.</span><span class=n>ptr</span> <span class=o>=</span> <span class=n>next</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=kt>void</span> <span class=nf>enqueue</span><span class=p>(</span><span class=k>const</span> <span class=n>T</span><span class=o>&amp;</span> <span class=n>value</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>Node</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;*</span> <span class=n>newNode</span> <span class=o>=</span> <span class=k>new</span> <span class=n>Node</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span><span class=p>(</span><span class=n>value</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>            <span class=n>PtrCount</span> <span class=n>tailOld</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=k>while</span> <span class=p>(</span><span class=nb>true</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// 加载当前的tail并解包为tailOld
+</span></span></span><span class=line><span class=cl>                <span class=n>AtomicPointerType</span> <span class=n>tailVal</span> <span class=o>=</span> <span class=n>tail</span><span class=p>.</span><span class=n>load</span><span class=p>(</span><span class=n>std</span><span class=o>::</span><span class=n>memory_order_acquire</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=n>tailOld</span> <span class=o>=</span> <span class=n>unpack</span><span class=p>(</span><span class=n>tailVal</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// 查看当前尾节点的下一个节点
+</span></span></span><span class=line><span class=cl>                <span class=n>Node</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;*</span> <span class=n>tailPtr</span> <span class=o>=</span> <span class=n>tailOld</span><span class=p>.</span><span class=n>ptr</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=n>Node</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;*</span> <span class=n>nextPtr</span> <span class=o>=</span> <span class=n>tailPtr</span><span class=o>-&gt;</span><span class=n>next</span><span class=p>.</span><span class=n>load</span><span class=p>(</span><span class=n>std</span><span class=o>::</span><span class=n>memory_order_acquire</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// 检查tail是否在这段时间被其他线程更改
+</span></span></span><span class=line><span class=cl>                <span class=k>if</span> <span class=p>(</span><span class=n>tailVal</span> <span class=o>==</span> <span class=n>tail</span><span class=p>.</span><span class=n>load</span><span class=p>(</span><span class=n>std</span><span class=o>::</span><span class=n>memory_order_acquire</span><span class=p>))</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                    <span class=c1>// tail是尾节点
+</span></span></span><span class=line><span class=cl>                    <span class=k>if</span> <span class=p>(</span><span class=n>nextPtr</span> <span class=o>==</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                        <span class=c1>// 尾节点next为空，尝试插入
+</span></span></span><span class=line><span class=cl>                        <span class=k>if</span> <span class=p>(</span><span class=n>tailPtr</span><span class=o>-&gt;</span><span class=n>next</span><span class=p>.</span><span class=n>compare_exchange_weak</span><span class=p>(</span><span class=n>nextPtr</span><span class=p>,</span> <span class=n>newNode</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                                                                <span class=n>std</span><span class=o>::</span><span class=n>memory_order_release</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                                                                <span class=n>std</span><span class=o>::</span><span class=n>memory_order_relaxed</span><span class=p>))</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                            <span class=n>PtrCount</span> <span class=n>newTail</span><span class=p>{</span><span class=n>newNode</span><span class=p>,</span> <span class=n>tailOld</span><span class=p>.</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>};</span>
+</span></span><span class=line><span class=cl>                            <span class=n>tail</span><span class=p>.</span><span class=n>compare_exchange_strong</span><span class=p>(</span><span class=n>tailVal</span><span class=p>,</span> <span class=n>pack</span><span class=p>(</span><span class=n>newTail</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>                                                         <span class=n>std</span><span class=o>::</span><span class=n>memory_order_release</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                                                         <span class=n>std</span><span class=o>::</span><span class=n>memory_order_relaxed</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                            <span class=k>return</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                    <span class=p>}</span>
+</span></span><span class=line><span class=cl>                <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                    <span class=c1>// tail不是尾节点，落后了 -&gt; 帮助推进tail
+</span></span></span><span class=line><span class=cl>                    <span class=n>PtrCount</span> <span class=n>newTail</span><span class=p>{</span><span class=n>nextPtr</span><span class=p>,</span> <span class=n>tailOld</span><span class=p>.</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>};</span>
+</span></span><span class=line><span class=cl>                    <span class=n>tail</span><span class=p>.</span><span class=n>compare_exchange_strong</span><span class=p>(</span><span class=n>tailVal</span><span class=p>,</span> <span class=n>pack</span><span class=p>(</span><span class=n>newTail</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>                                                 <span class=n>std</span><span class=o>::</span><span class=n>memory_order_release</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                                                 <span class=n>std</span><span class=o>::</span><span class=n>memory_order_relaxed</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                    <span class=p>}</span>
+</span></span><span class=line><span class=cl>                <span class=p>}</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=kt>bool</span> <span class=nf>dequeue</span><span class=p>(</span><span class=n>T</span><span class=o>&amp;</span> <span class=n>result</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>PtrCount</span> <span class=n>headOld</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=k>while</span><span class=p>(</span><span class=nb>true</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=n>AtomicPointerType</span> <span class=n>headVal</span> <span class=o>=</span> <span class=n>head</span><span class=p>.</span><span class=n>load</span><span class=p>(</span><span class=n>std</span><span class=o>::</span><span class=n>memory_order_acquire</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=n>AtomicPointerType</span> <span class=n>tailVal</span> <span class=o>=</span> <span class=n>tail</span><span class=p>.</span><span class=n>load</span><span class=p>(</span><span class=n>std</span><span class=o>::</span><span class=n>memory_order_acquire</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=n>headOld</span> <span class=o>=</span> <span class=n>unpack</span><span class=p>(</span><span class=n>headVal</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=n>PtrCount</span> <span class=n>tailOld</span> <span class=o>=</span> <span class=n>unpack</span><span class=p>(</span><span class=n>tailVal</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>                <span class=n>Node</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;*</span> <span class=n>headPtr</span> <span class=o>=</span> <span class=n>headOld</span><span class=p>.</span><span class=n>ptr</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=n>Node</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;*</span> <span class=n>tailPtr</span> <span class=o>=</span> <span class=n>tailOld</span><span class=p>.</span><span class=n>ptr</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=n>Node</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;*</span> <span class=n>nextPtr</span> <span class=o>=</span> <span class=n>headPtr</span><span class=o>-&gt;</span><span class=n>next</span><span class=p>.</span><span class=n>load</span><span class=p>(</span><span class=n>std</span><span class=o>::</span><span class=n>memory_order_acquire</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>                <span class=k>if</span> <span class=p>(</span><span class=n>headVal</span> <span class=o>==</span> <span class=n>head</span><span class=p>.</span><span class=n>load</span><span class=p>(</span><span class=n>std</span><span class=o>::</span><span class=n>memory_order_acquire</span><span class=p>))</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                    <span class=k>if</span> <span class=p>(</span><span class=n>headPtr</span> <span class=o>==</span> <span class=n>tailPtr</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                        <span class=k>if</span><span class=p>(</span><span class=n>nextPtr</span> <span class=o>==</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                            <span class=c1>// head与tail指向同一节点，且dummy的next为空 -&gt; 队列空
+</span></span></span><span class=line><span class=cl>                            <span class=k>return</span> <span class=nb>false</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                        <span class=p>}</span>
+</span></span><span class=line><span class=cl>                        <span class=c1>// 尾指针落后了，帮助推进tail
+</span></span></span><span class=line><span class=cl>                        <span class=n>PtrCount</span> <span class=n>newTail</span><span class=p>{</span><span class=n>nextPtr</span><span class=p>,</span> <span class=n>tailOld</span><span class=p>.</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>};</span>
+</span></span><span class=line><span class=cl>                        <span class=n>tail</span><span class=p>.</span><span class=n>compare_exchange_strong</span><span class=p>(</span><span class=n>tailVal</span><span class=p>,</span> <span class=n>pack</span><span class=p>(</span><span class=n>newTail</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>                                                     <span class=n>std</span><span class=o>::</span><span class=n>memory_order_release</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                                                     <span class=n>std</span><span class=o>::</span><span class=n>memory_order_relaxed</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                        <span class=c1>// 读取数据准备出队
+</span></span></span><span class=line><span class=cl>                        <span class=n>result</span> <span class=o>=</span> <span class=n>nextPtr</span><span class=o>-&gt;</span><span class=n>data</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                        <span class=n>PtrCount</span> <span class=n>newHead</span><span class=p>{</span><span class=n>nextPtr</span><span class=p>,</span> <span class=n>headOld</span><span class=p>.</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>};</span>
+</span></span><span class=line><span class=cl>                        <span class=k>if</span> <span class=p>(</span><span class=n>head</span><span class=p>.</span><span class=n>compare_exchange_strong</span><span class=p>(</span><span class=n>headVal</span><span class=p>,</span> <span class=n>pack</span><span class=p>(</span><span class=n>newHead</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>                                                         <span class=n>std</span><span class=o>::</span><span class=n>memory_order_release</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                                                         <span class=n>std</span><span class=o>::</span><span class=n>memory_order_relaxed</span><span class=p>))</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                            <span class=k>delete</span> <span class=n>headPtr</span><span class=p>;</span> <span class=c1>// 释放旧dummy节点
+</span></span></span><span class=line><span class=cl>                            <span class=k>return</span> <span class=nb>true</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                        <span class=p>}</span>
+</span></span><span class=line><span class=cl>                    <span class=p>}</span>
+</span></span><span class=line><span class=cl>                <span class=p>}</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>};</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cp>#endif
+</span></span></span></code></pre></td></tr></table></div></div><p>简单写了一个并发环境，能够比通过<code>std::lock_guard</code>实现的<code>LockedQueue</code>快一些，具体性能提升效果取决于并发压力：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl><span class=o>[</span>LockedQueue<span class=o>]</span> Total consumed: 400000, time: 0.0363734 seconds
+</span></span><span class=line><span class=cl><span class=o>[</span>LockFreeQueue<span class=o>]</span> Total consumed: 400000, time: 0.121427 seconds
+</span></span></code></pre></td></tr></table></div></div><h2 id=reference>Reference</h2><p><a class=link href=https://zhuanlan.zhihu.com/p/352723264 target=_blank rel=noopener>知乎：迈向多线程——解析无锁队列的原理与实现 - Clawko</a></p></section><footer class=article-footer><section class=article-tags><a href=/tags/%E6%96%87%E6%A1%A3/>文档</a>
+<a href=/tags/hpc/>HPC</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section></footer><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css integrity=sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV crossorigin=anonymous><script src=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js integrity=sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8 crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js integrity=sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05 crossorigin=anonymous defer></script><script>window.addEventListener("DOMContentLoaded",()=>{const e=document.querySelector(".main-article");renderMathInElement(e,{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1},{left:"\\(",right:"\\)",display:!1},{left:"\\[",right:"\\]",display:!0}],ignoredClasses:["gist"]})})</script></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article class=has-image><a href=/p/llm3/><div class=article-image><img src=/p/llm3/img/cover.1e2c906a89d3e1641161237e9d228d85_hu_c2dccf53b54c7c8f.jpg width=250 height=150 loading=lazy alt="Featured image of post Infra入门——An Overview of AI Infra" data-key=llm3 data-hash="md5-HiyQaonT4WQRYSN+nSKNhQ=="></div><div class=article-details><h2 class=article-title>Infra入门——An Overview of AI Infra</h2></div></a></article><article class=has-image><a href=/p/hello-world/><div class=article-image><img src=/p/hello-world/img/cover.875f03a2ec7ba6cf35d6c32b0e811dab_hu_92077aa9cb038470.jpg width=250 height=150 loading=lazy alt="Featured image of post Hello World" data-key=hello-world data-hash="md5-h18Doux7ps811sMrDoEdqw=="></div><div class=article-details><h2 class=article-title>Hello World</h2></div></a></article><article class=has-image><a href=/p/ops3/><div class=article-image><img src=/p/ops3/img/cover.830b1e9ba33d542d3a78879c36de1956_hu_dfa7a787fd4a199a.jpg width=250 height=150 loading=lazy alt='Featured image of post 对MacOS的初步探索：MacOS "Subsystem" for Linux' data-key=Ops3 data-hash="md5-gwsem6M9VC06eIecNt4ZVg=="></div><div class=article-details><h2 class=article-title>对MacOS的初步探索：MacOS "Subsystem" for Linux</h2></div></a></article><article class=has-image><a href=/p/llm2/><div class=article-image><img src=/p/llm2/img/cover.54ae66259e3c1b9a27ec946b3bb120cb_hu_253e638abf5259b5.png width=250 height=150 loading=lazy alt="Featured image of post 手搓Transformer：深入架构细节" data-key=llm2 data-hash="md5-VK5mJZ48G5on7JRrO7Egyw=="></div><div class=article-details><h2 class=article-title>手搓Transformer：深入架构细节</h2></div></a></article><article class=has-image><a href=/p/llm1/><div class=article-image><img src=/p/llm1/img/cover.476a6e47d456e530769339129869e375_hu_f9f2be7966a8d7d9.png width=250 height=150 loading=lazy alt="Featured image of post 从Transformer开始探索BERT" data-key=llm1 data-hash="md5-R2puR9RW5TB2kzkSmGnjdQ=="></div><div class=article-details><h2 class=article-title>从Transformer开始探索BERT</h2></div></a></article></div></div></aside><script src=https://utteranc.es/client.js repo=KaigeZheng/KaigeZheng.github.io issue-term=pathname crossorigin=anonymous async></script><style>.utterances{max-width:unset}</style><script>let utterancesLoaded=!1;function setUtterancesTheme(e){let t=document.querySelector(".utterances iframe");t&&t.contentWindow.postMessage({type:"set-theme",theme:`github-${e}`},"https://utteranc.es")}addEventListener("message",e=>{if(e.origin!=="https://utteranc.es")return;utterancesLoaded=!0,setUtterancesTheme(document.documentElement.dataset.scheme)}),window.addEventListener("onColorSchemeChange",e=>{if(!utterancesLoaded)return;setUtterancesTheme(e.detail)})</script><footer class=site-footer><section class=copyright>&copy;
+2024 -
+2025 Kambri's Blog</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>
