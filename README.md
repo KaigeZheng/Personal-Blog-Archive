@@ -6,4 +6,4 @@
 
 > `2025/12/25`更新：计划暂停维护这个仓库，并remake一个新的版本！
 
-> `2026/01/07`更新：新的博客已经上线，可以访问[站点](kambri.top)或[仓库](https://github.com/KaigeZheng/KaigeZheng.github.io)，同时这个仓库也不会再维护了。
+> `2026/01/07`更新：新的博客已经上线，可以访问[站点](https://kambri.top)或[仓库](https://github.com/KaigeZheng/KaigeZheng.github.io)，同时这个仓库也不会再维护了。
